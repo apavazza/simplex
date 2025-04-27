@@ -1,0 +1,28 @@
+{
+  "name": "simplex",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "next": "15.3.1",
+    "react": "^19",
+    "react-dom": "^19",
+    "tailwindcss-animate": "^1.0.7"
+  },
+  "devDependencies": {
+    "@types/node": "^22",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "depcheck": "^1.4.7",
+    "knip": "^5.50.5",
+    "postcss": "^8",
+    "tailwindcss": "^3.4.17",
+    "ts-prune": "^0.10.3",
+    "typescript": "^5"
+  }
+}
