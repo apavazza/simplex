@@ -33,7 +33,7 @@ export default function SimplexCalculator() {
   const [steps, setSteps] = useState<SimplexStep[]>([])
 
   const [numVariables, setNumVariables] = useState<number>(2)
-  const [objectiveCoefficients, setObjectiveCoefficients] = useState<string[]>(["0", "0"])
+  const [objectiveCoefficients, setObjectiveCoefficients] = useState<string[]>(["", ""])
   const [constraints, setConstraints] = useState<
     {
       coefficients: string[]
@@ -141,7 +141,7 @@ export default function SimplexCalculator() {
   }
 
   const reset = () => {
-    setObjectiveCoefficients(Array(numVariables).fill("0"))
+    setObjectiveCoefficients(Array(numVariables).fill(""))
     setConstraints([
       { coefficients: Array(numVariables).fill(""), operator: "<=", rhs: "" },
       { coefficients: Array(numVariables).fill(""), operator: "<=", rhs: "" },
@@ -203,18 +203,15 @@ export default function SimplexCalculator() {
                         setNumVariables(newNumVars)
 
                         // Update objective coefficients
-                        const newObjCoefs = [...objectiveCoefficients, 0]
-                        setObjectiveCoefficients(newObjCoefs.map(String))
+                        const newObjCoefs = [...objectiveCoefficients, ""];
+                        setObjectiveCoefficients(newObjCoefs);
 
                         // Update constraints
                         const newConstraints = constraints.map((constraint) => ({
                           ...constraint,
-                          coefficients: [...constraint.coefficients, 0],
-                        }))
-                        setConstraints(newConstraints.map(constraint => ({
-                          ...constraint,
-                          coefficients: constraint.coefficients.map(String),
-                        })))
+                          coefficients: [...constraint.coefficients, ""],
+                        }));
+                        setConstraints(newConstraints);
                       }
                     }}
                     className="px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-50"
