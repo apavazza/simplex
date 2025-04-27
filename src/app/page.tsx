@@ -120,24 +120,36 @@ export default function SimplexCalculator() {
   }
 
   const solve = () => {
-    try {
-      setError(null)
-      const objectiveFunction = buildObjectiveFunction()
-      const constraintStrings = buildConstraints()
+  // Validate input
+  if (
+    objectiveCoefficients.some(coef => coef.trim() === "") ||
+    constraints.some(constraint =>
+      constraint.coefficients.some(coef => coef.trim() === "") ||
+      constraint.rhs.trim() === ""
+    )
+  ) {
+    setError("Please fill in all coefficients and constraints before solving.");
+    return;
+  }
 
-      const solver = new SimplexSolver(objectiveFunction, constraintStrings, problemType)
-      const { solution, steps } = solver.solve()
-      setSolution(solution)
-      setSteps(steps)
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        setError(err.message)
-      } else {
-        setError("An error occurred while solving the problem")
-      }
-      setSolution(null)
-      setSteps([])
+  try {
+    setError(null);
+    const objectiveFunction = buildObjectiveFunction();
+    const constraintStrings = buildConstraints();
+
+    const solver = new SimplexSolver(objectiveFunction, constraintStrings, problemType);
+    const { solution, steps } = solver.solve();
+    setSolution(solution);
+    setSteps(steps);
+  } catch (err: unknown) {
+    if (err instanceof Error) {
+      setError(err.message);
+    } else {
+      setError("An error occurred while solving the problem");
     }
+    setSolution(null);
+    setSteps([]);
+  }
   }
 
   const reset = () => {
