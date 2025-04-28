@@ -120,15 +120,16 @@ export default function SimplexCalculator() {
   }
 
   const solve = () => {
-  // Validate input
+
+  // Validate that all inputs are valid numbers
   if (
-    objectiveCoefficients.some(coef => coef.trim() === "") ||
+    objectiveCoefficients.some(coef => Number.isNaN(parseFloat(coef))) ||
     constraints.some(constraint =>
-      constraint.coefficients.some(coef => coef.trim() === "") ||
-      constraint.rhs.trim() === ""
+      constraint.coefficients.some(coef => Number.isNaN(parseFloat(coef))) ||
+      Number.isNaN(parseFloat(constraint.rhs))
     )
   ) {
-    setError("Please fill in all coefficients and constraints before solving.");
+    setError("Please provide valid numeric values for all coefficients and constraints.");
     return;
   }
 
