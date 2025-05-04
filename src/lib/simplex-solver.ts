@@ -43,6 +43,37 @@ export class SimplexSolver {
       throw new Error("Objective function is required")
     }
 
+    // Look for direct contradictions: same left side, but lower bound > upper bound
+    for (let i = 0; i < this.constraints.length; i++) {
+      for (let j = i + 1; j < this.constraints.length; j++) {
+        const ci = this.constraints[i];
+        const cj = this.constraints[j];
+        const partsI = ci.split(/<=|>=|=/);
+        const partsJ = cj.split(/<=|>=|=/);
+        if (partsI.length === 2 && partsJ.length === 2) {
+          const leftI = partsI[0].replace(/\s+/g, "");
+          const leftJ = partsJ[0].replace(/\s+/g, "");
+          if (leftI === leftJ) {
+            // Check for contradiction
+            if (ci.includes("<=") && cj.includes(">=")) {
+              const upper = parseFloat(partsI[1]);
+              const lower = parseFloat(partsJ[1]);
+              if (!isNaN(upper) && !isNaN(lower) && lower > upper) {
+                throw new Error("No feasible solution");
+              }
+            }
+            if (ci.includes(">=") && cj.includes("<=")) {
+              const lower = parseFloat(partsI[1]);
+              const upper = parseFloat(partsJ[1]);
+              if (!isNaN(upper) && !isNaN(lower) && lower > upper) {
+                throw new Error("No feasible solution");
+              }
+            }
+          }
+        }
+      }
+    }
+
     this.parseInput()
   }
 
@@ -183,10 +214,6 @@ export class SimplexSolver {
       const pivotCol = this.findPivotColumn()
       const pivotRow = this.findPivotRow(pivotCol)
 
-      if (pivotRow === -1) {
-        throw new Error("Problem is unbounded")
-      }
-
       const pivotInfo: PivotInfo = {
         row: pivotRow,
         col: pivotCol,
@@ -245,12 +272,16 @@ export class SimplexSolver {
     for (let i = 0; i < this.matrix.length - 1; i++) {
       if (this.matrix[i][pivotCol] > 0) {
         const ratio = this.matrix[i][numVars + numConstraints + 1] / this.matrix[i][pivotCol]
-
-        if (ratio < minRatio) {
+                if (ratio < minRatio) {
           minRatio = ratio
           minRatioIndex = i
         }
       }
+    }
+
+    // If no valid pivot row found, the solution is unbounded
+    if (minRatioIndex === -1) {
+      throw new Error("No finite solution")
     }
 
     return minRatioIndex
