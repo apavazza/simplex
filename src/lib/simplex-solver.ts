@@ -311,51 +311,80 @@ export class SimplexSolver {
   private extractSolution(): Solution {
     const numVars = this.variables.length;
     const numConstraints = this.constraints.length;
-    const lastRow = this.matrix[this.matrix.length - 1];
-
+    const RHS_COLUMN = numVars + numConstraints + 1;
+    const tol = 1e-8;
+    
     const variableValues: { [key: string]: number } = {};
-    for (const variable of this.variables) {
-      variableValues[variable] = 0;
+    for (const v of this.variables) {
+      variableValues[v] = 0;
+    }
+    for (const s of this.slackVariables) {
+      variableValues[s] = 0;
     }
 
-    for (let j = 0; j < numVars + numConstraints; j++) {
-      let basicVarRow = -1;
-      let isBasic = true;
-      for (let i = 0; i < this.matrix.length - 1; i++) {
-        if (Math.abs(this.matrix[i][j]) > 1e-10) {
-          if (Math.abs(this.matrix[i][j] - 1) < 1e-10 && basicVarRow === -1) {
-            basicVarRow = i;
-          } else {
-            isBasic = false;
+    // For each constraint row, try to identify the basic variable
+    for (let i = 0; i < numConstraints; i++) {
+      let basicCol = -1;
+      let bestObjCoeff = Number.POSITIVE_INFINITY;
+      // Examine each column among variables+slack
+      for (let j = 0; j < numVars + numConstraints; j++) {
+        const value = this.matrix[i][j];
+        if (Math.abs(value - 1) < tol) {
+          // Check that it is the only nonzero entry in its column (among constraint rows)
+          let isUnit = true;
+          for (let k = 0; k < numConstraints; k++) {
+            if (k !== i && Math.abs(this.matrix[k][j]) > tol) {
+              isUnit = false;
+              break;
+            }
+          }
+          if (!isUnit) continue;
+          
+          // Get the objective row coefficient for this column
+          const objCoeff = Math.abs(this.matrix[this.matrix.length - 1][j]);
+          // Prefer basic variable candidates with near-zero objective coefficient
+          // (This distinguishes between ambiguous unit columns)
+          if (j < numVars && objCoeff < tol) {
+            // Immediate selection if an original variable has near-zero objective coefficient
+            basicCol = j;
             break;
+          } else if (objCoeff < bestObjCoeff) {
+            bestObjCoeff = objCoeff;
+            basicCol = j;
           }
         }
       }
-      if (isBasic && basicVarRow !== -1) {
-        const varName = j < numVars ? this.variables[j] : this.slackVariables[j - numVars];
-        variableValues[varName] = this.matrix[basicVarRow][numVars + numConstraints + 1];
+      if (basicCol !== -1) {
+        const rhsVal = this.matrix[i][RHS_COLUMN];
+        if (basicCol < numVars) {
+          variableValues[this.variables[basicCol]] = rhsVal;
+        } else {
+          variableValues[this.slackVariables[basicCol - numVars]] = rhsVal;
+        }
       }
     }
 
-    const variables: Variable[] = this.variables.map((name) => ({
-      name,
-      value: variableValues[name] || 0,
-    }));
-    const slackVars: Variable[] = this.slackVariables.map((name) => ({
-      name,
-      value: variableValues[name] || 0,
-    }));
-
-    let optimalValue = lastRow[numVars + numConstraints + 1];
-
-    // For a minimization problem, flip the sign back.
+    // Use the last row's RHS as the optimal value
+    let optimalValue = this.matrix[this.matrix.length - 1][RHS_COLUMN];
     if (this.problemType === "min") {
       optimalValue = -optimalValue;
     }
 
+    // Combine original and slack variables so all are visible in the final solution
+    const solutionVariables: Variable[] = [
+      ...this.variables.map((v) => ({
+        name: v,
+        value: variableValues[v] || 0,
+      })),
+      ...this.slackVariables.map((s) => ({
+        name: s,
+        value: variableValues[s] || 0,
+      })),
+    ];
+
     return {
       optimalValue,
-      variables: [...variables, ...slackVars],
+      variables: solutionVariables,
       feasible: true,
     };
   }
