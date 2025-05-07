@@ -45,23 +45,13 @@ export class SimplexSolver {
 
     // Unsupported minimization case check
     if (this.problemType === "min") {
-      // Check if all coefficients in the objective function are non-negative
-      const objTerms = this.objective.split(/(?=[-+])/).map((term) => term.trim())
-      const allNonNegative = objTerms.every(term => {
-        if (!term) return true
-        const match = term.match(/^\s*([+-]?\s*\d*\.?\d*)\s*x\d+/)
-        if (!match) return true
-        const coefStr = match[1].replace(/\s+/g, "")
-        const coef = coefStr === "" || coefStr === "+" ? 1 : (coefStr === "-" ? -1 : Number.parseFloat(coefStr))
-        return coef >= 0
-      })
-      // Only match >= or standalone =, not <=
+      // Throw if any constraint is >= or =
       const hasGEQorEQ = this.constraints.some(c => {
         const parts = c.split(/(<=|>=|=)/)
         return parts.length === 3 && (parts[1] === ">=" || parts[1] === "=")
       });
-      if (allNonNegative && hasGEQorEQ) {
-        throw new Error("Unsupported minimisation case: all coefficients in the objective function are non-negative and at least one constraint is >= or =.")
+      if (hasGEQorEQ) {
+        throw new Error("Unsupported minimisation case: constraints with >= or = are not supported for minimization problems.")
       }
     }
 
