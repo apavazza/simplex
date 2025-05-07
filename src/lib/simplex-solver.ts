@@ -258,6 +258,54 @@ export class SimplexSolver {
     // Extract solution
     const solution = this.extractSolution()
 
+    // Constraint satisfaction check
+    // Evaluate each constraint with the solution variables
+    for (let i = 0; i < this.constraints.length; i++) {
+      const constraint = this.constraints[i];
+      const parts = constraint.split(/(<=|>=|=)/);
+      if (parts.length !== 3) continue; // skip malformed
+
+      const leftSide = parts[0].trim();
+      const op = parts[1];
+      const rightSide = Number.parseFloat(parts[2].trim());
+      if (isNaN(rightSide)) continue;
+
+      // Build a map of variable values
+      const values: { [key: string]: number } = {};
+      for (const v of solution.variables) {
+        values[v.name] = v.value;
+      }
+
+      // Evaluate left side
+      let lhs = 0;
+      const terms = leftSide.split(/(?=[-+])/).map(term => term.trim());
+      for (const term of terms) {
+        if (!term) continue;
+        const match = term.match(/^\s*([+-]?\s*\d*\.?\d*)\s*(x\d+)/);
+        if (!match) continue;
+        const coefStr = match[1].replace(/\s+/g, "");
+        const coef = coefStr === "" || coefStr === "+" ? 1 : (coefStr === "-" ? -1 : Number.parseFloat(coefStr));
+        const variable = match[2].trim();
+        lhs += coef * (values[variable] ?? 0);
+      }
+
+      // Check constraint
+      let satisfied = false;
+      const tol = 1e-6;
+      if (op === "<=") satisfied = lhs <= rightSide + tol;
+      else if (op === ">=") satisfied = lhs >= rightSide - tol;
+      else if (op === "=") satisfied = Math.abs(lhs - rightSide) < tol;
+
+      if (!satisfied) {
+        const solutionStr = solution.variables
+          .map(v => `${v.name}=${v.value}`)
+          .join(", ");
+        throw new Error(
+          `Solution does not satisfy constraint ${i + 1}: "${constraint}". Solution: ${solutionStr}. Optimal value: ${solution.optimalValue}`
+        );
+      }
+    }
+
     return { solution, steps: this.steps }
   }
 
