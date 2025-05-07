@@ -51,7 +51,7 @@ export class SimplexSolver {
         return parts.length === 3 && (parts[1] === ">=" || parts[1] === "=")
       });
       if (hasGEQorEQ) {
-        throw new Error("Unsupported minimisation case: constraints with >= or = are not supported for minimization problems.")
+        throw new Error("Unsupported minimisation case: constraints with >= or = are not supported for minimisation problems.")
       }
     }
 
