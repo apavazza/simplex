@@ -45,7 +45,7 @@ export function SimplexTable({ data, variables, constraints, pivotInfo, previous
       <table className="min-w-full border border-gray-200">
         <thead>
           <tr className="bg-gray-50">
-            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Basic</th>
+            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"></th>
             {/* Variable columns (x1, x2, etc.) */}
             {Array.from({ length: variables }).map((_, i) => (
               <th
@@ -97,8 +97,12 @@ export function SimplexTable({ data, variables, constraints, pivotInfo, previous
           {data.slice(0, -1).map((row, rowIndex) => (
             <tr
               key={rowIndex}
-              className={`${rowIndex % 2 === 0 ? "bg-white" : "bg-gray-50"} ${
-                pivotInfo && pivotInfo.row === rowIndex ? "bg-orange-100" : ""
+              className={`${
+                pivotInfo && pivotInfo.row === rowIndex
+                  ? "bg-orange-100"
+                  : rowIndex % 2 === 0
+                    ? "bg-white"
+                    : "bg-gray-50"
               }`}
             >
               <td className="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">
