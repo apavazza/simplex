@@ -1,25 +1,4 @@
-type Variable = {
-  name: string
-  value: number
-}
-
-type Solution = {
-  optimalValue: number
-  variables: Variable[]
-  feasible: boolean
-}
-
-type PivotInfo = {
-  row: number
-  col: number
-  entering: string
-  leaving: string
-}
-
-type Step = {
-  table: number[][]
-  pivotInfo?: PivotInfo
-}
+import type { Variable, Solution, PivotInfo, Step } from "./simplex-types"
 
 export class SimplexSolver {
   private objective: string
@@ -41,18 +20,6 @@ export class SimplexSolver {
 
     if (this.objective === "") {
       throw new Error("Objective function is required")
-    }
-
-    // Unsupported minimization case check
-    if (this.problemType === "min") {
-      // Throw if any constraint is >= or =
-      const hasGEQorEQ = this.constraints.some(c => {
-        const parts = c.split(/(<=|>=|=)/)
-        return parts.length === 3 && (parts[1] === ">=" || parts[1] === "=")
-      });
-      if (hasGEQorEQ) {
-        throw new Error("Unsupported minimisation case: constraints with >= or = are not supported for minimisation problems.")
-      }
     }
 
     // Look for direct contradictions: same left side, but lower bound > upper bound
@@ -287,12 +254,7 @@ export class SimplexSolver {
       else if (op === "=") satisfied = Math.abs(lhs - rightSide) < tol;
 
       if (!satisfied) {
-        const solutionStr = solution.variables
-          .map(v => `${v.name}=${v.value}`)
-          .join(", ");
-        throw new Error(
-          `Solution does not satisfy constraint ${i + 1}: "${constraint}". Solution: ${solutionStr}. Optimal value: ${solution.optimalValue}`
-        );
+        throw new Error("The origin is not feasible.")
       }
     }
 
