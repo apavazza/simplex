@@ -5,6 +5,7 @@ import { useState } from "react"
 import { SimplexSolver } from "@/src/lib/simplex-solver"
 import { SimplexTable } from "@/src/components/simplex-table"
 import { GraphVisualizer } from "@/src/components/graph-visualizer"
+import { GraphVisualizer3D } from "@/src/components/graph-visualizer-3d"
 
 interface SimplexVariable {
     name: string;
@@ -211,21 +212,19 @@ export default function SimplexCalculator() {
                   <span className="px-3 py-1">{numVariables}</span>
                   <button
                     onClick={() => {
-                      if (numVariables < 6) {
-                        const newNumVars = numVariables + 1
-                        setNumVariables(newNumVars)
+                      const newNumVars = numVariables + 1
+                      setNumVariables(newNumVars)
 
-                        // Update objective coefficients
-                        const newObjCoefs = [...objectiveCoefficients, ""];
-                        setObjectiveCoefficients(newObjCoefs);
+                      // Update objective coefficients
+                      const newObjCoefs = [...objectiveCoefficients, ""];
+                      setObjectiveCoefficients(newObjCoefs);
 
-                        // Update constraints
-                        const newConstraints = constraints.map((constraint) => ({
-                          ...constraint,
-                          coefficients: [...constraint.coefficients, ""],
-                        }));
-                        setConstraints(newConstraints);
-                      }
+                      // Update constraints
+                      const newConstraints = constraints.map((constraint) => ({
+                        ...constraint,
+                        coefficients: [...constraint.coefficients, ""],
+                      }));
+                      setConstraints(newConstraints);
                     }}
                     className="px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-50"
                     disabled={numVariables >= 6}
@@ -424,6 +423,18 @@ export default function SimplexCalculator() {
                   Graph
                 </button>
               )}
+              {numVariables === 3 && (
+                <button
+                  className={`flex-1 px-4 py-3 text-center ${
+                    activeTab === "graph"
+                      ? "border-b-2 border-blue-500 text-blue-600 font-medium"
+                      : "text-gray-500 hover:text-gray-700"
+                  }`}
+                  onClick={() => setActiveTab("graph")}
+                >
+                  3D Graph
+                </button>
+              )}
             </div>
 
             {/* Solution Tab Content */}
@@ -494,6 +505,20 @@ export default function SimplexCalculator() {
             {activeTab === "graph" && numVariables === 2 && (
               <div className="p-4">
                 <GraphVisualizer
+                  constraints={constraints.map(constraint => ({
+                    coefficients: constraint.coefficients.map(Number),
+                    operator: constraint.operator,
+                    rhs: parseFloat(constraint.rhs)
+                  }))}
+                  solution={solution}
+                  problemType={problemType}
+                  objectiveCoefficients={objectiveCoefficients.map(Number)}
+                />
+              </div>
+            )}
+            {activeTab === "graph" && numVariables === 3 && (
+              <div className="p-4">
+                <GraphVisualizer3D
                   constraints={constraints.map(constraint => ({
                     coefficients: constraint.coefficients.map(Number),
                     operator: constraint.operator,

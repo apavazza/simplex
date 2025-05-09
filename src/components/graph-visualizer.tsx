@@ -74,8 +74,24 @@ export function GraphVisualizer({ constraints, solution, problemType, objectiveC
 
     // If we have a solution, adjust bounds to include it
     if (solution && solution.variables && solution.variables.length >= 2) {
-      const x = solution.variables[0].value
-      const y = solution.variables[1].value
+      // Prefer x1, x2 if present, else s1, s2, else first two variables
+      let x = 0, y = 0;
+      const x1 = solution.variables.find(v => v.name === 'x1');
+      const x2 = solution.variables.find(v => v.name === 'x2');
+      if (x1 && x2) {
+        x = x1.value;
+        y = x2.value;
+      } else {
+        const s1 = solution.variables.find(v => v.name === 's1');
+        const s2 = solution.variables.find(v => v.name === 's2');
+        if (s1 && s2) {
+          x = s1.value;
+          y = s2.value;
+        } else {
+          x = solution.variables[0].value;
+          y = solution.variables[1].value;
+        }
+      }
       if (x * 1.2 > maxX) maxX = x * 1.2
       if (y * 1.2 > maxY) maxY = y * 1.2
     }
@@ -324,9 +340,24 @@ export function GraphVisualizer({ constraints, solution, problemType, objectiveC
 
     // Draw optimal solution point if available
     if (solution && solution.variables && solution.variables.length >= 2) {
-      const x = solution.variables[0].value
-      const y = solution.variables[1].value
-
+      // Prefer x1, x2 if present, else s1, s2, else first two variables
+      let x = 0, y = 0;
+      const x1 = solution.variables.find(v => v.name === 'x1');
+      const x2 = solution.variables.find(v => v.name === 'x2');
+      if (x1 && x2) {
+        x = x1.value;
+        y = x2.value;
+      } else {
+        const s1 = solution.variables.find(v => v.name === 's1');
+        const s2 = solution.variables.find(v => v.name === 's2');
+        if (s1 && s2) {
+          x = s1.value;
+          y = s2.value;
+        } else {
+          x = solution.variables[0].value;
+          y = solution.variables[1].value;
+        }
+      }
       ctx.beginPath()
       ctx.arc(transformX(x), transformY(y), 6, 0, 2 * Math.PI)
       ctx.fillStyle = "#ff0000"

@@ -254,7 +254,7 @@ export class SimplexSolver {
       else if (op === "=") satisfied = Math.abs(lhs - rightSide) < tol;
 
       if (!satisfied) {
-        throw new Error("The origin is not feasible.")
+        throw new Error("The origin is not feasible. Use Dual Simplex.")
       }
     }
 
