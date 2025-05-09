@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { SimplexSolver } from "@/src/lib/simplex-solver"
 import { DualSimplexSolver } from "@/src/lib/dual-simplex-solver"
 import { SimplexTable } from "@/src/components/simplex-table"
@@ -38,11 +38,7 @@ export default function SimplexCalculator() {
   const [numVariables, setNumVariables] = useState<number>(2)
   const [objectiveCoefficients, setObjectiveCoefficients] = useState<string[]>(["", ""])
   const [constraints, setConstraints] = useState<
-    {
-      coefficients: string[]
-      operator: "<=" | ">=" | "="
-      rhs: string
-    }[]
+    { coefficients: string[]; operator: "<=" | ">=" | "="; rhs: string }[]
   >([
     { coefficients: Array(2).fill(""), operator: "<=", rhs: "" },
     { coefficients: Array(2).fill(""), operator: "<=", rhs: "" },
@@ -53,6 +49,135 @@ export default function SimplexCalculator() {
   const [activeTab, setActiveTab] = useState<"solution" | "steps" | "graph">("solution")
   const [simplexMethod, setSimplexMethod] = useState<"standard" | "dual">("standard")
   const [selectedSimplexMethod, setSelectedSimplexMethod] = useState<"standard" | "dual">("standard")
+
+  // A flag to prevent syncing until after the query parameters are loaded
+  const [loadedFromQuery, setLoadedFromQuery] = useState(false);
+
+  // Load state from query params on mount
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    let isValid = true;
+
+    // 1. Method type
+    const smethod = params.get("smethod");
+    if (smethod === "standard" || smethod === "dual") {
+      setSelectedSimplexMethod(smethod);
+    } else {
+      isValid = false;
+    }
+
+    // 2. Number of variables
+    const varsParam = params.get("vars");
+    const parsedVars = parseInt(varsParam || "2", 10);
+    const numVars = !isNaN(parsedVars) && parsedVars >= 2 ? parsedVars : 2;
+    if (isNaN(parsedVars) || parsedVars < 2) {
+      isValid = false;
+    }
+    setNumVariables(numVars);
+
+    // 3. Problem Type (max/min)
+    const ptype = params.get("ptype");
+    if (ptype === "max" || ptype === "min") {
+      setProblemType(ptype);
+    } else {
+      isValid = false;
+    }
+
+    // 4. Objective coefficients
+    const obj = params.get("obj");
+    let objCoefs: string[] = [];
+    if (obj) {
+      objCoefs = obj.split(",");
+      if (objCoefs.length !== numVars) {
+        isValid = false;
+      }
+    } else {
+      isValid = false;
+    }
+    setObjectiveCoefficients(objCoefs);
+
+    // 5. Constraints
+    const loadedConstraints: {
+      coefficients: string[];
+      operator: "<=" | ">=" | "=";
+      rhs: string;
+    }[] = [];
+    let i = 0;
+    while (params.has(`c${i}`)) {
+      const val = params.get(`c${i}`);
+      if (val) {
+        const parts = val.split("|");
+        if (parts.length !== 3) {
+          isValid = false;
+          break;
+        }
+        let [coefs, op, rhs] = parts;
+        const coefArr = coefs.split(",");
+        if (coefArr.length !== numVars) {
+          isValid = false;
+          break;
+        }
+        op = op.trim();
+        if (op !== "<=" && op !== ">=" && op !== "=") {
+          isValid = false;
+          break;
+        }
+        loadedConstraints.push({
+          coefficients: coefArr,
+          operator: op as "<=" | ">=" | "=",
+          rhs: rhs || "",
+        });
+      }
+      i++;
+    }
+    if (loadedConstraints.length > 0) {
+      setConstraints(loadedConstraints);
+    } else {
+      isValid = false;
+    }
+
+    // If any parameter is invalid, clear the query string
+    if (!isValid) {
+      window.history.replaceState(null, "", window.location.pathname);
+    }
+
+    // Mark that the state has been loaded
+    setLoadedFromQuery(true);
+  }, []);
+
+  useEffect(() => {
+    if (!loadedFromQuery) return;
+    const params = new URLSearchParams();
+    params.set("smethod", selectedSimplexMethod); // 1. method type
+    params.set("vars", numVariables.toString());  // 2. number of variables
+    params.set("ptype", problemType);             // 3. min/max
+    params.set("obj", objectiveCoefficients.join(",")); // 4. objective coefficients
+    constraints.forEach((c, i) => {              // 5. constraints
+      params.set(
+        `c${i}`,
+        `${c.coefficients.join(",")}|${c.operator}|${c.rhs}`
+      );
+    });
+    // Remove any extra constraint params if constraints were removed
+    let i = constraints.length;
+    while (true) {
+      if (!params.has(`c${i}`)) break;
+      params.delete(`c${i}`);
+      i++;
+    }
+    const newUrl =
+      window.location.pathname +
+      (params.toString() ? "?" + params.toString() : "");
+    window.history.replaceState(null, "", newUrl);
+  }, [
+    loadedFromQuery,
+    selectedSimplexMethod,
+    numVariables,
+    problemType,
+    objectiveCoefficients,
+    constraints,
+  ]);
 
   const updateObjectiveCoefficient = (index: number, value: string) => {
     const newCoeffs = [...objectiveCoefficients]
