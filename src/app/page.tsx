@@ -3,8 +3,10 @@
 import type React from "react"
 import { useState } from "react"
 import { SimplexSolver } from "@/src/lib/simplex-solver"
+import { DualSimplexSolver } from "@/src/lib/dual-simplex-solver"
 import { SimplexTable } from "@/src/components/simplex-table"
 import { GraphVisualizer } from "@/src/components/graph-visualizer"
+import { DualSimplexTable } from "@/src/components/dual-simplex-table"
 import { GraphVisualizer3D } from "@/src/components/graph-visualizer-3d"
 
 interface SimplexVariable {
@@ -49,6 +51,8 @@ export default function SimplexCalculator() {
   const [problemType, setProblemType] = useState<"max" | "min">("max")
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<"solution" | "steps" | "graph">("solution")
+  const [simplexMethod, setSimplexMethod] = useState<"standard" | "dual">("standard")
+  const [selectedSimplexMethod, setSelectedSimplexMethod] = useState<"standard" | "dual">("standard")
 
   const updateObjectiveCoefficient = (index: number, value: string) => {
     const newCoeffs = [...objectiveCoefficients]
@@ -139,10 +143,17 @@ export default function SimplexCalculator() {
     const objectiveFunction = buildObjectiveFunction();
     const constraintStrings = buildConstraints();
 
-    const solver = new SimplexSolver(objectiveFunction, constraintStrings, problemType);
-    const { solution, steps } = solver.solve();
-    setSolution(solution);
-    setSteps(steps);
+    setSimplexMethod(selectedSimplexMethod)
+
+    let solver;
+    if (selectedSimplexMethod === "dual") {
+      solver = new DualSimplexSolver(objectiveFunction, constraintStrings, problemType);
+    } else {
+      solver = new SimplexSolver(objectiveFunction, constraintStrings, problemType);
+    }
+    const result = solver.solve();
+    setSolution(result.solution);
+    setSteps(result.steps);
   } catch (err: unknown) {
     if (err instanceof Error) {
       setError(err.message);
@@ -160,7 +171,14 @@ export default function SimplexCalculator() {
       { coefficients: Array(numVariables).fill(""), operator: "<=", rhs: "" },
       { coefficients: Array(numVariables).fill(""), operator: "<=", rhs: "" },
     ])
+    setSimplexMethod("standard")
+    setNumVariables(2)
     setProblemType("max")
+    setObjectiveCoefficients(Array(2).fill(""))
+    setConstraints([
+      { coefficients: Array(2).fill(""), operator: "<=", rhs: "" },
+      { coefficients: Array(2).fill(""), operator: "<=", rhs: "" },
+    ])
     setSolution(null)
     setSteps([])
     setError(null)
@@ -179,6 +197,42 @@ export default function SimplexCalculator() {
           </div>
           <div className="p-6">
             <div className="space-y-6">
+
+              {/* Simplex Method Selector */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium">Simplex Method</label>
+                  <div className="flex items-center space-x-4">
+                    <div className="flex items-center space-x-1">
+                      <input
+                        type="radio"
+                        id="standard"
+                        name="simplexMethod"
+                        value="standard"
+                        checked={selectedSimplexMethod === "standard"}
+                        onChange={() => setSelectedSimplexMethod("standard")}
+                        className="h-4 w-4 text-blue-600"
+                      />
+                      <label htmlFor="standard" className="text-sm">
+                        Standard Simplex
+                      </label>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <input
+                        type="radio"
+                        id="dual"
+                        name="simplexMethod"
+                        value="dual"
+                        checked={selectedSimplexMethod === "dual"}
+                        onChange={() => setSelectedSimplexMethod("dual")}
+                        className="h-4 w-4 text-blue-600"
+                      />
+                      <label htmlFor="dual" className="text-sm">
+                        Dual Simplex
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
               {/* Number of variables selector */}
               <div className="space-y-2">
                 <label className="block text-sm font-medium">Number of Variables</label>
@@ -227,7 +281,6 @@ export default function SimplexCalculator() {
                       setConstraints(newConstraints);
                     }}
                     className="px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-50"
-                    disabled={numVariables >= 6}
                   >
                     +
                   </button>
@@ -449,11 +502,34 @@ export default function SimplexCalculator() {
                     <div>
                       <h3 className="font-medium text-gray-800">Optimal Solution</h3>
                       <div className="grid grid-cols-2 gap-2 mt-2">
-                        {solution.variables.map((variable: SimplexVariable, index: number) => (
-                          <div key={index} className="bg-gray-100 p-2 rounded-md">
-                          <span className="font-medium">{variable.name}:</span> {variable.value.toFixed(4)}
-                          </div>
-                        ))}
+                        {/* For dual simplex, display y and x variables separately */}
+                        {simplexMethod === "dual" ? (
+                          <>
+                            <div className="col-span-2 font-semibold text-purple-700">Dual Variables (y):</div>
+                            {solution.variables
+                              .filter(v => v.name.startsWith("y"))
+                              .map((variable, index) => (
+                                <div key={index} className="bg-gray-100 p-2 rounded-md">
+                                  <span className="font-medium">{variable.name}:</span> {variable.value.toFixed(4)}
+                                </div>
+                              ))}
+                            <div className="col-span-2 font-semibold text-blue-700 mt-2">Primal Variables (x):</div>
+                            {solution.variables
+                              .filter(v => v.name.startsWith("s")) // In dual tableau, slack variables correspond to primal x
+                              .map((variable, index) => (
+                                <div key={index} className="bg-gray-100 p-2 rounded-md">
+                                  <span className="font-medium">{`x${index + 1}`}:</span> {variable.value.toFixed(4)}
+                                </div>
+                              ))}
+                          </>
+                        ) : (
+                          // Standard simplex: show all variables as before
+                          solution.variables.map((variable: SimplexVariable, index: number) => (
+                            <div key={index} className="bg-gray-100 p-2 rounded-md">
+                              <span className="font-medium">{variable.name}:</span> {variable.value.toFixed(4)}
+                            </div>
+                          ))
+                        )}
                       </div>
                     </div>
                   </div>
@@ -473,13 +549,23 @@ export default function SimplexCalculator() {
                     {steps.map((step, index) => (
                       <div key={index} className="space-y-2">
                         <h3 className="font-medium text-gray-800">Iteration {index + 1}</h3>
-                        <SimplexTable
-                          data={step.table}
-                          variables={numVariables}
-                          constraints={constraints.length}
-                          pivotInfo={step.pivotInfo}
-                          previousTable={index > 0 ? steps[index - 1].table : undefined}
-                        />
+                        {simplexMethod === "dual" ? (
+                          <DualSimplexTable
+                            data={step.table}
+                            dualVars={constraints.length}
+                            primalVars={numVariables}
+                            pivotInfo={step.pivotInfo}
+                            previousTable={index > 0 ? steps[index - 1].table : undefined}
+                          />
+                        ) : (
+                          <SimplexTable
+                            data={step.table}
+                            variables={numVariables}
+                            constraints={constraints.length}
+                            pivotInfo={step.pivotInfo}
+                            previousTable={index > 0 ? steps[index - 1].table : undefined}
+                          />
+                        )}
                         {step.pivotInfo && (
                           <div className="text-sm text-gray-600 bg-yellow-50 p-3 rounded-md border border-yellow-200">
                             <p className="font-medium">Pivot Information:</p>
