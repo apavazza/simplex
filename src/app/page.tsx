@@ -604,16 +604,22 @@ export default function SimplexCalculator() {
             )}
             {activeTab === "graph" && numVariables === 3 && (
               <div className="p-4">
-                <GraphVisualizer3D
-                  constraints={constraints.map(constraint => ({
-                    coefficients: constraint.coefficients.map(Number),
-                    operator: constraint.operator,
-                    rhs: parseFloat(constraint.rhs)
-                  }))}
-                  solution={solution}
-                  problemType={problemType}
-                  objectiveCoefficients={objectiveCoefficients.map(Number)}
-                />
+                {solution ? (
+                  <GraphVisualizer3D
+                    constraints={constraints.map(constraint => ({
+                      coefficients: constraint.coefficients.map(Number),
+                      operator: constraint.operator,
+                      rhs: parseFloat(constraint.rhs)
+                    }))}
+                    solution={solution}
+                    problemType={problemType}
+                    objectiveCoefficients={objectiveCoefficients.map(Number)}
+                  />
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    Enter a problem and click &quot;Solve&quot; to see the 3D graphical solution
+                  </div>
+                )}
               </div>
             )}
           </div>

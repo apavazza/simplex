@@ -142,7 +142,7 @@ export function GraphVisualizer3D({ constraints, solution }: GraphVisualizer3DPr
 
   return (
     <div style={{ width: "100%", height: canvasHeight, position: "relative", background: "#f8fafc", borderRadius: 12, boxShadow: "0 2px 8px #0001" }}>
-      <Canvas camera={{ position: [14, 14, 14], fov: 50 }}>
+      <Canvas camera={{ position: [18, 18, 18], fov: 50 }}>
         <ambientLight intensity={0.7} />
         <pointLight position={[20, 20, 20]} intensity={0.7} />
         <OrbitControls enablePan enableZoom enableRotate />
@@ -250,7 +250,7 @@ export function GraphVisualizer3D({ constraints, solution }: GraphVisualizer3DPr
         <div>
           <span style={{ color: "#1e90ff" }}>Blue dots</span>: feasible region vertices<br />
           <span style={{ color: "#ff0000" }}>Red dot</span>: optimal solution<br />
-          <span style={{ color: "#888" }}>Colored planes</span>: constraints (labeled "Constraint 1", etc.)
+          <span style={{ color: "#888" }}>Colored planes</span>: constraints
         </div>
       </div>
     </div>
