@@ -53,6 +53,14 @@ export default function SimplexCalculator() {
   // A flag to prevent syncing until after the query parameters are loaded
   const [loadedFromQuery, setLoadedFromQuery] = useState(false);
 
+  // Initialize solved state as deep copies so they won't update live
+  const [solvedConstraints, setSolvedConstraints] = useState(
+    constraints.map(c => ({ ...c, coefficients: [...c.coefficients] }))
+  );
+  const [solvedObjectiveCoefficients, setSolvedObjectiveCoefficients] = useState(
+    [...objectiveCoefficients]
+  );
+
   // Load state from query params on mount
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -279,6 +287,12 @@ export default function SimplexCalculator() {
     const result = solver.solve();
     setSolution(result.solution);
     setSteps(result.steps);
+
+    // Update solved state (deep copies) only on clicking Solve
+    setSolvedConstraints(
+      constraints.map(c => ({ ...c, coefficients: [...c.coefficients] }))
+    );
+    setSolvedObjectiveCoefficients([...objectiveCoefficients]);
   } catch (err: unknown) {
     if (err instanceof Error) {
       setError(err.message);
@@ -716,14 +730,14 @@ export default function SimplexCalculator() {
             {activeTab === "graph" && numVariables === 2 && (
               <div className="p-4">
                 <GraphVisualizer
-                  constraints={constraints.map(constraint => ({
+                  constraints={solvedConstraints.map(constraint => ({
                     coefficients: constraint.coefficients.map(Number),
                     operator: constraint.operator,
                     rhs: parseFloat(constraint.rhs)
                   }))}
                   solution={solution}
                   problemType={problemType}
-                  objectiveCoefficients={objectiveCoefficients.map(Number)}
+                  objectiveCoefficients={solvedObjectiveCoefficients.map(Number)}
                 />
               </div>
             )}
@@ -731,14 +745,14 @@ export default function SimplexCalculator() {
               <div className="p-4">
                 {solution ? (
                   <GraphVisualizer3D
-                    constraints={constraints.map(constraint => ({
+                    constraints={solvedConstraints.map(constraint => ({
                       coefficients: constraint.coefficients.map(Number),
                       operator: constraint.operator,
                       rhs: parseFloat(constraint.rhs)
                     }))}
                     solution={solution}
                     problemType={problemType}
-                    objectiveCoefficients={objectiveCoefficients.map(Number)}
+                    objectiveCoefficients={solvedObjectiveCoefficients.map(Number)}
                   />
                 ) : (
                   <div className="text-center py-8 text-gray-500">
