@@ -292,7 +292,7 @@ export default function SimplexCalculator() {
       { coefficients: Array(numVariables).fill(""), operator: "<=", rhs: "" },
       { coefficients: Array(numVariables).fill(""), operator: "<=", rhs: "" },
     ])
-    setSimplexMethod("standard")
+    setSelectedSimplexMethod("standard")
     setNumVariables(2)
     setProblemType("max")
     setObjectiveCoefficients(Array(2).fill(""))
@@ -303,6 +303,7 @@ export default function SimplexCalculator() {
     setSolution(null)
     setSteps([])
     setError(null)
+    window.history.replaceState(null, "", window.location.pathname)
   }
 
   return (
