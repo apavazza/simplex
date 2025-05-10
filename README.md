@@ -2,26 +2,21 @@
 
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](LICENSE)
 
-Simplex Method Solver is an open source web application that allows users to solve linear programming problems using the Simplex algorithm. The application provides an interactive interface to input objective functions and constraints, displays step-by-step solution tables, and visualizes the feasible region for two-variable problems.
+**Simplex Method Solver** is an open-source web application that allows users to solve linear programming problems using the Simplex algorithm. The application provides an interactive interface for defining problems, step-by-step solution tables, and visualizations of feasible regions. It supports both the standard and dual simplex methods.
 
 ## Features
 
-- **Interactive Problem Setup:** Specify the number of variables, define the objective function, and configure constraints.
-- **Step-by-Step Solution:** View each iteration of the Simplex algorithm with pivot information and tableau updates.
-- **Graphical Visualization:** For two-variable problems, the app displays the constraint lines, feasible region, and highlights the optimal solution point.
-- **Responsive UI:** Styled with Tailwind CSS for a modern and responsive design.
+- **Interactive Problem Setup:** Easily specify the number of variables, define the objective function, and configure constraints for both standard and dual simplex methods.
+- **Step-by-Step Solution:** View each iteration of the Simplex algorithm, including pivot information and tableau updates.
+- **Graphical Visualization:**
+  - **2D Visualization** for two-variable objective functions: Displays constraint lines, the feasible region, and the optimal solution point.
+  - **3D Interactive Visualization** for three-variable objective functions: Provides an interactive 3D graph of the constraint surfaces and feasible region, with visual indication of the optimal point.
+- **Responsive UI:** Built with Tailwind CSS for a clean, modern, and responsive user experience.
 
 ## Prerequisites
 
 - [Node.js](https://nodejs.org/) (v22 or later)
 - [pnpm](https://pnpm.io/)
-
-## Project Structure
-
-- **src/app/page.tsx:** Main page that contains the problem setup and integrates all components.
-- **src/lib/simplex-solver.ts:** The Simplex algorithm implementation, including tableau initialization, pivot selection, and solution extraction.
-- **src/components/simplex-table.tsx:** Displays each simplex tableau and pivot operations.
-- **src/components/graph-visualizer.tsx:** Provides a 2D graphical visualization of the feasible region and constraints.
 
 ## License
 
