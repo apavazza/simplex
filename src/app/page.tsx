@@ -59,8 +59,8 @@ export default function SimplexCalculator() {
     [...objectiveCoefficients]
   );
   const [solvedNumVariables, setSolvedNumVariables] = useState<number>(numVariables);
-
   const [shareNotification, setShareNotification] = useState(false);
+  const [autoSolve, setAutoSolve] = useState(false);
 
   // Load state from query params on mount
   useEffect(() => {
@@ -102,7 +102,7 @@ export default function SimplexCalculator() {
       }
       setObjectiveCoefficients(objCoefs);
     }
-    // Else, leave objectiveCoefficients as the default
+    // Else, leave objectiveCoefficients as default
 
     // 5. Constraints – update state only if at least one constraint exists
     const loadedConstraints: {
@@ -149,8 +149,22 @@ export default function SimplexCalculator() {
     // If any parameter is invalid, clear the query string
     if (!isValid) {
       window.history.replaceState(null, "", window.location.pathname);
+    } else {
+      if (params.toString()) {
+        setAutoSolve(true);
+      }
     }
   }, []);
+
+  // useEffect to auto-solve once state changes settle
+  useEffect(() => {
+    if (autoSolve) {
+      // Ensure that the state (objectiveCoefficients, constraints, etc.)
+      // have been updated before calling solve
+      solve();
+      setAutoSolve(false);
+    }
+  }, [autoSolve, objectiveCoefficients, constraints, numVariables, problemType, selectedSimplexMethod]);
 
   const updateObjectiveCoefficient = (index: number, value: string) => {
     const newCoeffs = [...objectiveCoefficients]
