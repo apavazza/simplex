@@ -107,7 +107,7 @@ export default function SimplexCalculator() {
     // Else, leave objectiveCoefficients as the default
 
     // 5. Constraints – update state only if at least one constraint exists
-    let loadedConstraints: {
+    const loadedConstraints: {
       coefficients: string[];
       operator: "<=" | ">=" | "=";
       rhs: string;
@@ -122,7 +122,8 @@ export default function SimplexCalculator() {
             isValid = false;
             break;
           }
-          let [coefs, op, rhs] = parts;
+          const [coefs, rhs] = [parts[0], parts[2]];
+          let op = parts[1];
           const coefArr = coefs.split(",");
           if (coefArr.length !== numVars) {
             isValid = false;

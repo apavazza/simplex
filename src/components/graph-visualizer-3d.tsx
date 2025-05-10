@@ -33,9 +33,9 @@ function isWebGLAvailable(): boolean {
       window.WebGLRenderingContext &&
       (canvas.getContext("webgl") || canvas.getContext("experimental-webgl"))
     )
-  } catch (e) {
+    } catch {
     return false
-  }
+    }
 }
 
 // Helper: get intersection of 3 planes (if any)

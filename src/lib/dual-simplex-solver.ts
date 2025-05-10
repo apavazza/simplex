@@ -239,7 +239,7 @@ export class DualSimplexSolver {
     }
 
     // Use the last row's RHS as the optimal value (dual objective)
-    let optimalValue = this.matrix[this.matrix.length - 1][RHS_COLUMN]
+    const optimalValue = this.matrix[this.matrix.length - 1][RHS_COLUMN]
 
     // Combine dual and slack variables for output
     const solutionVariables: Variable[] = [
