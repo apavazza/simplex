@@ -25,6 +25,19 @@ interface GraphVisualizer3DProps {
   objectiveCoefficients: number[]
 }
 
+// Helper: detect if WebGL is available
+function isWebGLAvailable(): boolean {
+  try {
+    const canvas = document.createElement("canvas")
+    return !!(
+      window.WebGLRenderingContext &&
+      (canvas.getContext("webgl") || canvas.getContext("experimental-webgl"))
+    )
+  } catch (e) {
+    return false
+  }
+}
+
 // Helper: get intersection of 3 planes (if any)
 function intersectPlanes(
   a: number[], b: number[], c: number[],
@@ -88,6 +101,15 @@ function getPlaneQuaternion(normal: THREE.Vector3): THREE.Quaternion {
 }
 
 export function GraphVisualizer3D({ constraints, solution }: GraphVisualizer3DProps) {
+  // If WebGL is not available, return placeholder text
+  if (!isWebGLAvailable()) {
+    return (
+      <div className="p-8 text-center text-gray-500">
+        3D Graph is not available because WebGL is disabled in your browser.
+      </div>
+    )
+  }
+
   // Compute feasible region vertices (intersection of all triplets of planes)
   const vertices: [number, number, number][] = []
   for (let i = 0; i < constraints.length; i++) {
