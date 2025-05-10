@@ -74,7 +74,7 @@ export default function SimplexCalculator() {
     const smethod = params.get("smethod");
     if (smethod === "standard" || smethod === "dual") {
       setSelectedSimplexMethod(smethod);
-    } else {
+    } else if (params.has("smethod")) {
       isValid = false;
     }
 
@@ -82,7 +82,7 @@ export default function SimplexCalculator() {
     const varsParam = params.get("vars");
     const parsedVars = parseInt(varsParam || "2", 10);
     const numVars = !isNaN(parsedVars) && parsedVars >= 2 ? parsedVars : 2;
-    if (isNaN(parsedVars) || parsedVars < 2) {
+    if (params.has("vars") && (isNaN(parsedVars) || parsedVars < 2)) {
       isValid = false;
     }
     setNumVariables(numVars);
@@ -91,63 +91,62 @@ export default function SimplexCalculator() {
     const ptype = params.get("ptype");
     if (ptype === "max" || ptype === "min") {
       setProblemType(ptype);
-    } else {
+    } else if (params.has("ptype")) {
       isValid = false;
     }
 
-    // 4. Objective coefficients
+    // 4. Objective coefficients – update state only if "obj" exists
     const obj = params.get("obj");
-    let objCoefs: string[] = [];
-    if (obj) {
-      objCoefs = obj.split(",");
+    if (obj !== null) {
+      const objCoefs = obj.split(",");
       if (objCoefs.length !== numVars) {
         isValid = false;
       }
-    } else {
-      isValid = false;
+      setObjectiveCoefficients(objCoefs);
     }
-    setObjectiveCoefficients(objCoefs);
+    // Else, leave objectiveCoefficients as the default
 
-    // 5. Constraints
-    const loadedConstraints: {
+    // 5. Constraints – update state only if at least one constraint exists
+    let loadedConstraints: {
       coefficients: string[];
       operator: "<=" | ">=" | "=";
       rhs: string;
     }[] = [];
-    let i = 0;
-    while (params.has(`c${i}`)) {
-      const val = params.get(`c${i}`);
-      if (val) {
-        const parts = val.split("|");
-        if (parts.length !== 3) {
-          isValid = false;
-          break;
+    if (params.has("c0")) {
+      let i = 0;
+      while (params.has(`c${i}`)) {
+        const val = params.get(`c${i}`);
+        if (val) {
+          const parts = val.split("|");
+          if (parts.length !== 3) {
+            isValid = false;
+            break;
+          }
+          let [coefs, op, rhs] = parts;
+          const coefArr = coefs.split(",");
+          if (coefArr.length !== numVars) {
+            isValid = false;
+            break;
+          }
+          op = op.trim();
+          if (op !== "<=" && op !== ">=" && op !== "=") {
+            isValid = false;
+            break;
+          }
+          loadedConstraints.push({
+            coefficients: coefArr,
+            operator: op as "<=" | ">=" | "=",
+            rhs: rhs || "",
+          });
         }
-        let [coefs, op, rhs] = parts;
-        const coefArr = coefs.split(",");
-        if (coefArr.length !== numVars) {
-          isValid = false;
-          break;
-        }
-        op = op.trim();
-        if (op !== "<=" && op !== ">=" && op !== "=") {
-          isValid = false;
-          break;
-        }
-        loadedConstraints.push({
-          coefficients: coefArr,
-          operator: op as "<=" | ">=" | "=",
-          rhs: rhs || "",
-        });
+        i++;
       }
-      i++;
+      if (loadedConstraints.length > 0) {
+        setConstraints(loadedConstraints);
+      } else {
+        isValid = false;
+      }
     }
-    if (loadedConstraints.length > 0) {
-      setConstraints(loadedConstraints);
-    } else {
-      isValid = false;
-    }
-
     // If any parameter is invalid, clear the query string
     if (!isValid) {
       window.history.replaceState(null, "", window.location.pathname);
