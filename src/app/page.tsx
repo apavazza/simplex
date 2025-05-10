@@ -8,6 +8,7 @@ import { SimplexTable } from "@/src/components/simplex-table"
 import { GraphVisualizer } from "@/src/components/graph-visualizer"
 import { DualSimplexTable } from "@/src/components/dual-simplex-table"
 import { GraphVisualizer3D } from "@/src/components/graph-visualizer-3d"
+import { Share2 } from "lucide-react"
 
 interface SimplexVariable {
     name: string;
@@ -60,6 +61,8 @@ export default function SimplexCalculator() {
   const [solvedObjectiveCoefficients, setSolvedObjectiveCoefficients] = useState(
     [...objectiveCoefficients]
   );
+
+  const [shareNotification, setShareNotification] = useState(false);
 
   // Load state from query params on mount
   useEffect(() => {
@@ -330,9 +333,27 @@ export default function SimplexCalculator() {
       <div className="grid gap-6 md:grid-cols-[1fr_1fr] lg:grid-cols-[1fr_2fr]">
         {/* Problem Setup Card */}
         <div className="bg-white rounded-lg shadow-md border border-gray-200 md:col-span-1">
-          <div className="p-4 border-b border-gray-200">
-            <h2 className="text-xl font-semibold">Problem Setup</h2>
-            <p className="text-gray-500 text-sm">Enter coefficients for your linear programming problem</p>
+          <div className="p-4 border-b border-gray-200 flex justify-between items-center relative">
+            <div>
+              <h2 className="text-xl font-semibold">Problem Setup</h2>
+              <p className="text-gray-500 text-sm">Enter coefficients for your linear programming problem</p>
+            </div>
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(window.location.href);
+                setShareNotification(true);
+                setTimeout(() => setShareNotification(false), 2000);
+              }}
+              title="Share problem"
+              className="text-gray-500 hover:text-gray-700"
+            >
+              <Share2 className="w-6 h-6" />
+            </button>
+            {shareNotification && (
+              <div className="absolute top-0 right-0 mt-1 mr-2 bg-green-100 text-green-700 text-xs px-2 py-1 rounded">
+                URL copied!
+              </div>
+            )}
           </div>
           <div className="p-6">
             <div className="space-y-6">
