@@ -58,6 +58,7 @@ export default function SimplexCalculator() {
   const [solvedObjectiveCoefficients, setSolvedObjectiveCoefficients] = useState(
     [...objectiveCoefficients]
   );
+  const [solvedNumVariables, setSolvedNumVariables] = useState<number>(numVariables);
 
   const [shareNotification, setShareNotification] = useState(false);
 
@@ -256,6 +257,7 @@ export default function SimplexCalculator() {
       const solvedObjCoefsCopy = [...objectiveCoefficients];
       setSolvedConstraints(solvedConstraintsCopy);
       setSolvedObjectiveCoefficients(solvedObjCoefsCopy);
+      setSolvedNumVariables(numVariables);
 
       // Update query parameters now using the values in the solved state
       const params = new URLSearchParams();
@@ -604,7 +606,7 @@ export default function SimplexCalculator() {
               >
                 Step by Step
               </button>
-              {numVariables === 2 && (
+              {solvedNumVariables === 2 && (
                 <button
                   className={`flex-1 px-4 py-3 text-center ${
                     activeTab === "graph"
@@ -616,7 +618,7 @@ export default function SimplexCalculator() {
                   Graph
                 </button>
               )}
-              {numVariables === 3 && (
+              {solvedNumVariables === 3 && (
                 <button
                   className={`flex-1 px-4 py-3 text-center ${
                     activeTab === "graph"
@@ -728,7 +730,7 @@ export default function SimplexCalculator() {
             )}
 
             {/* Graph Tab Content */}
-            {activeTab === "graph" && numVariables === 2 && (
+            {activeTab === "graph" && solvedNumVariables === 2 && (
               <div className="p-4">
                 <GraphVisualizer
                   constraints={solvedConstraints.map(constraint => ({
@@ -742,7 +744,7 @@ export default function SimplexCalculator() {
                 />
               </div>
             )}
-            {activeTab === "graph" && numVariables === 3 && (
+            {activeTab === "graph" && solvedNumVariables === 3 && (
               <div className="p-4">
                 {solution ? (
                   <GraphVisualizer3D
