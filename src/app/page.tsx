@@ -51,9 +51,6 @@ export default function SimplexCalculator() {
   const [simplexMethod, setSimplexMethod] = useState<"standard" | "dual">("standard")
   const [selectedSimplexMethod, setSelectedSimplexMethod] = useState<"standard" | "dual">("standard")
 
-  // A flag to prevent syncing until after the query parameters are loaded
-  const [loadedFromQuery, setLoadedFromQuery] = useState(false);
-
   // Initialize solved state as deep copies so they won't update live
   const [solvedConstraints, setSolvedConstraints] = useState(
     constraints.map(c => ({ ...c, coefficients: [...c.coefficients] }))
@@ -152,43 +149,7 @@ export default function SimplexCalculator() {
     if (!isValid) {
       window.history.replaceState(null, "", window.location.pathname);
     }
-
-    // Mark that the state has been loaded
-    setLoadedFromQuery(true);
   }, []);
-
-  useEffect(() => {
-    if (!loadedFromQuery) return;
-    const params = new URLSearchParams();
-    params.set("smethod", selectedSimplexMethod); // 1. method type
-    params.set("vars", numVariables.toString());  // 2. number of variables
-    params.set("ptype", problemType);             // 3. min/max
-    params.set("obj", objectiveCoefficients.join(",")); // 4. objective coefficients
-    constraints.forEach((c, i) => {              // 5. constraints
-      params.set(
-        `c${i}`,
-        `${c.coefficients.join(",")}|${c.operator}|${c.rhs}`
-      );
-    });
-    // Remove any extra constraint params if constraints were removed
-    let i = constraints.length;
-    while (true) {
-      if (!params.has(`c${i}`)) break;
-      params.delete(`c${i}`);
-      i++;
-    }
-    const newUrl =
-      window.location.pathname +
-      (params.toString() ? "?" + params.toString() : "");
-    window.history.replaceState(null, "", newUrl);
-  }, [
-    loadedFromQuery,
-    selectedSimplexMethod,
-    numVariables,
-    problemType,
-    objectiveCoefficients,
-    constraints,
-  ]);
 
   const updateObjectiveCoefficient = (index: number, value: string) => {
     const newCoeffs = [...objectiveCoefficients]
@@ -261,50 +222,68 @@ export default function SimplexCalculator() {
   }
 
   const solve = () => {
-
-  // Validate that all inputs are valid numbers
-  if (
-    objectiveCoefficients.some(coef => Number.isNaN(parseFloat(coef))) ||
-    constraints.some(constraint =>
-      constraint.coefficients.some(coef => Number.isNaN(parseFloat(coef))) ||
-      Number.isNaN(parseFloat(constraint.rhs))
-    )
-  ) {
-    setError("Please provide valid numeric values for all coefficients and constraints.");
-    return;
-  }
-
-  try {
-    setError(null);
-    const objectiveFunction = buildObjectiveFunction();
-    const constraintStrings = buildConstraints();
-
-    setSimplexMethod(selectedSimplexMethod)
-
-    let solver;
-    if (selectedSimplexMethod === "dual") {
-      solver = new DualSimplexSolver(objectiveFunction, constraintStrings, problemType);
-    } else {
-      solver = new SimplexSolver(objectiveFunction, constraintStrings, problemType);
+    // Validate that all inputs are valid numbers
+    if (
+      objectiveCoefficients.some(coef => Number.isNaN(parseFloat(coef))) ||
+      constraints.some(constraint =>
+        constraint.coefficients.some(coef => Number.isNaN(parseFloat(coef))) ||
+        Number.isNaN(parseFloat(constraint.rhs))
+      )
+    ) {
+      setError("Please provide valid numeric values for all coefficients and constraints.");
+      return;
     }
-    const result = solver.solve();
-    setSolution(result.solution);
-    setSteps(result.steps);
 
-    // Update solved state (deep copies) only on clicking Solve
-    setSolvedConstraints(
-      constraints.map(c => ({ ...c, coefficients: [...c.coefficients] }))
-    );
-    setSolvedObjectiveCoefficients([...objectiveCoefficients]);
-  } catch (err: unknown) {
-    if (err instanceof Error) {
-      setError(err.message);
-    } else {
-      setError("An error occurred while solving the problem");
+    try {
+      setError(null);
+      const objectiveFunction = buildObjectiveFunction();
+      const constraintStrings = buildConstraints();
+
+      setSimplexMethod(selectedSimplexMethod);
+
+      let solver;
+      if (selectedSimplexMethod === "dual") {
+        solver = new DualSimplexSolver(objectiveFunction, constraintStrings, problemType);
+      } else {
+        solver = new SimplexSolver(objectiveFunction, constraintStrings, problemType);
+      }
+      const result = solver.solve();
+      setSolution(result.solution);
+      setSteps(result.steps);
+
+      // Update solved state (make deep copies) only on clicking Solve
+      const solvedConstraintsCopy = constraints.map(c => ({ ...c, coefficients: [...c.coefficients] }));
+      const solvedObjCoefsCopy = [...objectiveCoefficients];
+      setSolvedConstraints(solvedConstraintsCopy);
+      setSolvedObjectiveCoefficients(solvedObjCoefsCopy);
+
+      // Update query parameters now using the values in the solved state
+      const params = new URLSearchParams();
+      params.set("smethod", selectedSimplexMethod); // method type
+      params.set("vars", numVariables.toString());    // number of variables
+      params.set("ptype", problemType);               // problem type (max/min)
+      params.set("obj", objectiveCoefficients.join(",")); // objective coefficients
+      solvedConstraintsCopy.forEach((c, i) => {
+        params.set(`c${i}`, `${c.coefficients.join(",")}|${c.operator}|${c.rhs}`);
+      });
+      // Remove any extra constraint params in case constraints have been reduced
+      let i = solvedConstraintsCopy.length;
+      while (params.has(`c${i}`)) {
+        params.delete(`c${i}`);
+        i++;
+      }
+      const newUrl =
+        window.location.pathname + (params.toString() ? "?" + params.toString() : "");
+      window.history.replaceState(null, "", newUrl);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("An error occurred while solving the problem");
+      }
+      setSolution(null);
+      setSteps([]);
     }
-    setSolution(null);
-    setSteps([]);
-  }
   }
 
   const reset = () => {
