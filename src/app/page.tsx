@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { SimplexSolver } from "@/src/lib/simplex-solver"
 import { DualSimplexSolver } from "@/src/lib/dual-simplex-solver"
 import { SimplexTable } from "@/src/components/simplex-table"
@@ -156,16 +156,6 @@ export default function SimplexCalculator() {
     }
   }, []);
 
-  // useEffect to auto-solve once state changes settle
-  useEffect(() => {
-    if (autoSolve) {
-      // Ensure that the state (objectiveCoefficients, constraints, etc.)
-      // have been updated before calling solve
-      solve();
-      setAutoSolve(false);
-    }
-  }, [autoSolve, objectiveCoefficients, constraints, numVariables, problemType, selectedSimplexMethod]);
-
   const updateObjectiveCoefficient = (index: number, value: string) => {
     const newCoeffs = [...objectiveCoefficients]
     newCoeffs[index] = value
@@ -208,7 +198,7 @@ export default function SimplexCalculator() {
     setConstraints(newConstraints);
   }
 
-  const buildObjectiveFunction = (): string => {
+  const buildObjectiveFunction = useCallback((): string => {
     return objectiveCoefficients
       .map((coef, index) => {
         const num = parseFloat(coef)
@@ -217,9 +207,9 @@ export default function SimplexCalculator() {
       })
       .filter(term => term !== "")
       .join(" + ") || "0"
-  }
+  }, [objectiveCoefficients])
 
-  const buildConstraints = () => {
+  const buildConstraints = useCallback(() => {
     return constraints.map((constraint) => {
       const leftSide =
         constraint.coefficients
@@ -234,9 +224,9 @@ export default function SimplexCalculator() {
       const rhsValue = parseFloat(constraint.rhs)
       return `${leftSide} ${constraint.operator} ${isNaN(rhsValue) ? 0 : rhsValue}`
     })
-  }
+  }, [constraints])
 
-  const solve = () => {
+  const solve = useCallback(() => {
     // Validate that all inputs are valid numbers
     if (
       objectiveCoefficients.some(coef => Number.isNaN(parseFloat(coef))) ||
@@ -300,7 +290,17 @@ export default function SimplexCalculator() {
       setSolution(null);
       setSteps([]);
     }
-  }
+  }, [buildConstraints, buildObjectiveFunction, constraints, numVariables, objectiveCoefficients, problemType, selectedSimplexMethod])
+
+  // useEffect to auto-solve once state changes settle
+  useEffect(() => {
+    if (autoSolve) {
+      // Ensure that the state (objectiveCoefficients, constraints, etc.)
+      // have been updated before calling solve
+      solve();
+      setAutoSolve(false);
+    }
+  }, [autoSolve, solve, objectiveCoefficients, constraints, numVariables, problemType, selectedSimplexMethod]);
 
   const reset = () => {
     setObjectiveCoefficients(Array(numVariables).fill(""))
