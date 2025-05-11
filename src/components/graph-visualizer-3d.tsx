@@ -208,7 +208,7 @@ export function GraphVisualizer3D({ constraints, solution }: GraphVisualizer3DPr
               receiveShadow
               material-side={THREE.DoubleSide}
             >
-              <Html position={[0, 0, 0]} center style={{ pointerEvents: "none", whiteSpace: "nowrap" }}>
+              <Html position={[-axisLength / 2, axisLength / 2, 0]} center style={{ pointerEvents: "none", whiteSpace: "nowrap" }}>
                 <span style={{
                   color: "#222",
                   background: "#fff9",
@@ -230,8 +230,8 @@ export function GraphVisualizer3D({ constraints, solution }: GraphVisualizer3DPr
         {vertices.map((v, i) => (
           <Sphere key={i} args={[0.12, 16, 16]} position={v}>
             <meshStandardMaterial color="#1e90ff" />
-            <Html position={[0,0.25,0]} center style={{ pointerEvents: "none" }}>
-              <span style={{ color: "#1e90ff", fontWeight: 500, fontSize: 11 }}>
+            <Html position={[0,0.5,0]} center style={{ pointerEvents: "none" }}>
+              <span style={{ color: "#1e90ff", fontWeight: 500, fontSize: 11, whiteSpace: "nowrap" }}>
                 ({v.map(val => val.toFixed(2)).join(", ")})
               </span>
             </Html>
@@ -241,8 +241,8 @@ export function GraphVisualizer3D({ constraints, solution }: GraphVisualizer3DPr
         {/* Optimal solution */}
         <Sphere args={[0.18, 24, 24]} position={[x, y, z]}>
           <meshStandardMaterial color="#ff0000" />
-          <Html position={[0,0.32,0]} center style={{ pointerEvents: "none" }}>
-            <span style={{ color: "#ff0000", fontWeight: 600, fontSize: 13 }}>
+          <Html position={[0,0.75,0]} center style={{ pointerEvents: "none" }}>
+            <span style={{ color: "#ff0000", fontWeight: 600, fontSize: 13, whiteSpace: "nowrap" }}>
               Opt ({x.toFixed(2)}, {y.toFixed(2)}, {z.toFixed(2)})
             </span>
           </Html>
