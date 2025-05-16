@@ -11,26 +11,26 @@
   "dependencies": {
     "@react-three/drei": "^10.0.7",
     "@react-three/fiber": "^9.1.2",
-    "lucide-react": "^0.509.0",
-    "next": "15.3.1",
-    "react": "^19",
-    "react-dom": "^19",
+    "lucide-react": "^0.511.0",
+    "next": "15.3.2",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
     "tailwindcss-animate": "^1.0.7",
     "three": "^0.176.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
-    "@types/node": "^22",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
+    "@types/node": "^22.15.18",
+    "@types/react": "^19.1.4",
+    "@types/react-dom": "^19.1.5",
     "@types/three": "^0.176.0",
     "depcheck": "^1.4.7",
     "eslint": "^9.26.0",
-    "eslint-config-next": "^15.3.1",
-    "knip": "^5.50.5",
-    "postcss": "^8",
+    "eslint-config-next": "^15.3.2",
+    "knip": "^5.56.0",
+    "postcss": "^8.5.3",
     "tailwindcss": "^3.4.17",
     "ts-prune": "^0.10.3",
-    "typescript": "^5"
+    "typescript": "^5.8.3"
   }
 }
