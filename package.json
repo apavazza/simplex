@@ -4,12 +4,12 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "node scripts/build.js",
     "start": "next start",
     "lint": "next lint"
   },
   "dependencies": {
-    "@react-three/drei": "^10.0.7",
+    "@react-three/drei": "^10.0.8",
     "@react-three/fiber": "^9.1.2",
     "lucide-react": "^0.511.0",
     "next": "15.3.2",
@@ -25,12 +25,10 @@
     "@types/react-dom": "^19.1.5",
     "@types/three": "^0.176.0",
     "depcheck": "^1.4.7",
-    "eslint": "^9.26.0",
+    "eslint": "^9.27.0",
     "eslint-config-next": "^15.3.2",
-    "knip": "^5.56.0",
     "postcss": "^8.5.3",
     "tailwindcss": "^3.4.17",
-    "ts-prune": "^0.10.3",
     "typescript": "^5.8.3"
   }
 }
