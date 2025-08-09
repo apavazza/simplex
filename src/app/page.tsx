@@ -488,7 +488,7 @@ export default function SimplexCalculator() {
                           type="number"
                           value={coef}
                           onChange={(e) => updateObjectiveCoefficient(index, e.target.value)}
-                          className="w-16 px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-16 px-2 py-1 border border-gray-300 rounded-md focus:outline-hidden focus:ring-2 focus:ring-blue-500"
                         />
                         <span className="ml-1">
                           x<sub>{index + 1}</sub>
@@ -512,7 +512,7 @@ export default function SimplexCalculator() {
                             type="number"
                             value={coef}
                             onChange={(e) => updateConstraintCoefficient(index, coefIndex, e.target.value)}
-                            className="w-16 px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-16 px-2 py-1 border border-gray-300 rounded-md focus:outline-hidden focus:ring-2 focus:ring-blue-500"
                           />
                           <span className="ml-1">
                             x<sub>{coefIndex + 1}</sub>
@@ -523,7 +523,7 @@ export default function SimplexCalculator() {
                       <select
                         value={constraint.operator}
                         onChange={(e) => updateConstraintOperator(index, e.target.value as "<=" | ">=" | "=")}
-                        className="px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="px-2 py-1 border border-gray-300 rounded-md focus:outline-hidden focus:ring-2 focus:ring-blue-500"
                       >
                         <option value="<=">≤</option>
                         <option value=">=">≥</option>
@@ -534,13 +534,13 @@ export default function SimplexCalculator() {
                         type="number"
                         value={constraint.rhs}
                         onChange={(e) => updateConstraintRHS(index, e.target.value)}
-                        className="w-16 px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-16 px-2 py-1 border border-gray-300 rounded-md focus:outline-hidden focus:ring-2 focus:ring-blue-500"
                       />
 
                       {constraints.length > 1 && (
                         <button
                           onClick={() => removeConstraint(index)}
-                          className="p-1 text-gray-500 hover:text-gray-700 focus:outline-none"
+                          className="p-1 text-gray-500 hover:text-gray-700 focus:outline-hidden"
                           aria-label="Remove constraint"
                         >
                           <svg
@@ -577,13 +577,13 @@ export default function SimplexCalculator() {
               <div className="flex gap-2">
                 <button
                   onClick={solve}
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                 >
                   Solve
                 </button>
                 <button
                   onClick={reset}
-                  className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+                  className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-hidden focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
                 >
                   Reset
                 </button>
