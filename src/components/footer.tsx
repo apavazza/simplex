@@ -7,15 +7,20 @@ export default function Footer() {
         <div className="flex flex-col lg:flex-row lg:relative items-center">
           <div className="order-2 lg:mx-auto">
             <p className="text-sm text-center">
-              &copy; 2025 <Link
-                            href={"https://amadeopavazza.from.hr/"}
+              &copy; 2026 <Link
+                            href={"https://github.com/apavazza"}
                             target="_blank"
                             rel="noreferrer"
                             className="text-gray-800 hover:text-gray-500"
                           >
                             Amadeo Pavazza
                           </Link>
-                        . All rights reserved.
+                          . Licensed under the <Link
+                                                  href={"https://github.com/apavazza/simplex/blob/master/LICENSE"}
+                                                  target="_blank"
+                                                  rel="noreferrer"
+                                                  className="text-gray-800 hover:text-gray-500"
+                                                > GNU AGPLv3</Link>.
             </p>
           </div>
 
