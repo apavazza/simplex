@@ -117,7 +117,14 @@ export class DualSimplexSolver {
     this.steps.push({ table: this.cloneMatrix(this.matrix) })
 
     // Standard simplex iterations (dual tableau)
+    const startTime = Date.now();
+    const TIMEOUT_MS = 3000;
+
     while (this.canImprove()) {
+      if (Date.now() - startTime > TIMEOUT_MS) {
+        throw new Error("Timed out. The problem might be unbounded or cycling.");
+      }
+
       const pivotCol = this.findPivotColumn()
       const pivotRow = this.findPivotRow(pivotCol)
 

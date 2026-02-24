@@ -369,7 +369,7 @@ export default function SimplexCalculator() {
                         className="h-4 w-4 text-blue-600"
                       />
                       <label htmlFor="standard" className="text-sm">
-                        Standard Simplex
+                        Simplex
                       </label>
                     </div>
                     <div className="flex items-center space-x-1">
@@ -571,6 +571,15 @@ export default function SimplexCalculator() {
                 <div className="mt-2 text-sm text-gray-500">
                   Note: x<sub>i</sub> ≥ 0 (Non-negativity constraints are assumed)
                 </div>
+              </div>
+
+              {/* Feasibility Note */}
+              <div className="text-sm bg-yellow-50 text-yellow-800 p-3 rounded-md border border-yellow-200 space-y-2">
+                {selectedSimplexMethod === "dual" ? (
+                   <p><strong>Note:</strong> Dual Simplex expects the initial problem to be <strong>dual feasible</strong>. Since Two-Phase/Big M methods are not implemented, an invalid starting point may yield incorrect results.</p>
+                ) : (
+                   <p><strong>Note:</strong> Simplex expects the initial problem to be <strong>primal feasible</strong>. Since Two-Phase/Big M methods are not implemented, an invalid starting point may yield incorrect results.</p>
+                )}
               </div>
 
               {/* Action Buttons */}

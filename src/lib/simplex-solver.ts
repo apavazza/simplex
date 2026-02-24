@@ -189,7 +189,14 @@ export class SimplexSolver {
     })
 
     // Perform simplex iterations
+    const startTime = Date.now();
+    const TIMEOUT_MS = 3000;
+
     while (this.canImprove()) {
+      if (Date.now() - startTime > TIMEOUT_MS) {
+        throw new Error("Timed out. The problem might be unbounded or cycling.");
+      }
+
       const pivotCol = this.findPivotColumn()
       const pivotRow = this.findPivotRow(pivotCol)
 
@@ -254,7 +261,7 @@ export class SimplexSolver {
       else if (op === "=") satisfied = Math.abs(lhs - rightSide) < tol;
 
       if (!satisfied) {
-        throw new Error("The origin is not feasible. Use Dual Simplex.")
+        throw new Error("The origin is not feasible")
       }
     }
 
