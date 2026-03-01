@@ -7,33 +7,20 @@ export default function Footer() {
         <div className="flex flex-col lg:flex-row lg:relative items-center">
           <div className="order-2 lg:mx-auto">
             <p className="text-sm text-center">
-              &copy; 2026 <Link
-                            href={"https://github.com/apavazza"}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-gray-800 hover:text-gray-500"
-                          >
-                            Amadeo Pavazza
-                          </Link>
-                          . Licensed under the <Link
-                                                  href={"https://github.com/apavazza/simplex/blob/master/LICENSE"}
-                                                  target="_blank"
-                                                  rel="noreferrer"
-                                                  className="text-gray-800 hover:text-gray-500"
-                                                > GNU AGPLv3</Link>.
+              Built by{' '}
+              <Link
+                href={"https://github.com/apavazza"}
+                target="_blank"
+                rel="noreferrer"
+                className="text-gray-800 hover:text-gray-500"
+              >
+                Amadeo Pavazza
+              </Link>
             </p>
           </div>
 
           <div className="order-1 lg:absolute lg:left-0">
             <div className="flex flex-row space-x-5 items-center">
-                <Link
-                    href={"https://github.com/apavazza/simplex/blob/master/LICENSE"}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-sm text-gray-800 hover:text-gray-500 whitespace-nowrap"
-                >
-                  AGPLv3 license
-                </Link>
                 <Link
                     href={"https://github.com/apavazza/simplex"}
                     target="_blank"
@@ -41,6 +28,22 @@ export default function Footer() {
                     className="text-sm text-gray-800 hover:text-gray-500 whitespace-nowrap"
                 >
                   Repository
+                </Link>
+                <Link
+                    href={"https://github.com/apavazza/simplex/blob/master/LICENSE"}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-sm text-gray-800 hover:text-gray-500 whitespace-nowrap"
+                >
+                  AGPLv3 License
+                </Link>
+                <Link
+                    href={"/THIRD_PARTY_LICENSES.txt"}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-sm text-gray-800 hover:text-gray-500 whitespace-nowrap"
+                >
+                  Third-Party Licenses
                 </Link>
             </div>
           </div>
