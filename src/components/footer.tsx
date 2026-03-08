@@ -2,21 +2,10 @@ import Link from "next/link"
 
 export default function Footer() {
     return (
-    <footer className="py-2 lg:py-4 relative bg-white border-t border-gray-200">
+    <footer className="py-2 lg:py-6 relative bg-white border-t border-gray-200">
       <div className="px-4">
         <div className="flex flex-col lg:flex-row lg:relative items-center">
           <div className="order-2 lg:mx-auto">
-            <p className="text-sm text-center">
-              Built by{' '}
-              <Link
-                href={"https://github.com/apavazza"}
-                target="_blank"
-                rel="noreferrer"
-                className="text-gray-800 hover:text-gray-500"
-              >
-                Amadeo Pavazza
-              </Link>
-            </p>
           </div>
 
           <div className="order-1 lg:absolute lg:left-0">

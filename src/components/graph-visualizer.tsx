@@ -21,10 +21,46 @@ interface GraphVisualizerProps {
   solution: SimplexSolution | null
   problemType: "max" | "min"
   objectiveCoefficients: number[]
+  axisLabels?: { x: string; y: string }
+  solutionVariableNames?: { x: string; y: string }
 }
 
-export function GraphVisualizer({ constraints, solution, problemType, objectiveCoefficients }: GraphVisualizerProps) {
+export function GraphVisualizer({
+  constraints,
+  solution,
+  problemType,
+  objectiveCoefficients,
+  axisLabels,
+  solutionVariableNames,
+}: GraphVisualizerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+
+  const getPointFromSolution = (inputSolution: SimplexSolution) => {
+    if (!inputSolution.variables || inputSolution.variables.length < 2) return null
+
+    if (solutionVariableNames) {
+      const xVar = inputSolution.variables.find((v) => v.name === solutionVariableNames.x)
+      const yVar = inputSolution.variables.find((v) => v.name === solutionVariableNames.y)
+      if (xVar && yVar) {
+        return { x: xVar.value, y: yVar.value }
+      }
+    }
+
+    // Backward-compatible fallback for standard simplex output shape.
+    const x1 = inputSolution.variables.find((v) => v.name === "x1")
+    const x2 = inputSolution.variables.find((v) => v.name === "x2")
+    if (x1 && x2) {
+      return { x: x1.value, y: x2.value }
+    }
+
+    const s1 = inputSolution.variables.find((v) => v.name === "s1")
+    const s2 = inputSolution.variables.find((v) => v.name === "s2")
+    if (s1 && s2) {
+      return { x: s1.value, y: s2.value }
+    }
+
+    return { x: inputSolution.variables[0].value, y: inputSolution.variables[1].value }
+  }
 
   useEffect(() => {
     if (!canvasRef.current) return
@@ -74,24 +110,9 @@ export function GraphVisualizer({ constraints, solution, problemType, objectiveC
 
     // If we have a solution, adjust bounds to include it
     if (solution && solution.variables && solution.variables.length >= 2) {
-      // Prefer x1, x2 if present, else s1, s2, else first two variables
-      let x = 0, y = 0;
-      const x1 = solution.variables.find(v => v.name === 'x1');
-      const x2 = solution.variables.find(v => v.name === 'x2');
-      if (x1 && x2) {
-        x = x1.value;
-        y = x2.value;
-      } else {
-        const s1 = solution.variables.find(v => v.name === 's1');
-        const s2 = solution.variables.find(v => v.name === 's2');
-        if (s1 && s2) {
-          x = s1.value;
-          y = s2.value;
-        } else {
-          x = solution.variables[0].value;
-          y = solution.variables[1].value;
-        }
-      }
+      const point = getPointFromSolution(solution)
+      if (!point) return
+      const { x, y } = point
       if (x * 1.2 > maxX) maxX = x * 1.2
       if (y * 1.2 > maxY) maxY = y * 1.2
     }
@@ -152,8 +173,8 @@ export function GraphVisualizer({ constraints, solution, problemType, objectiveC
     }
 
     // Label axes
-    ctx.fillText("x₁", canvas.width - padding + 10, canvas.height - padding + 4)
-    ctx.fillText("x₂", padding - 4, padding - 10)
+    ctx.fillText(axisLabels?.x ?? "x₁", canvas.width - padding + 10, canvas.height - padding + 4)
+    ctx.fillText(axisLabels?.y ?? "x₂", padding - 4, padding - 10)
 
     // Draw feasible region (light blue)
     {
@@ -196,14 +217,17 @@ export function GraphVisualizer({ constraints, solution, problemType, objectiveC
         }
       });
 
-      // Function to check if a point satisfies all constraints (assumed ≤)
+      // Function to check if a point satisfies all constraints using each operator.
       const satisfiesAll = (pt: { x: number; y: number }) => {
         if (pt.x < -1e-6 || pt.y < -1e-6) return false;
         return constraints.every((constraint) => {
           const a = constraint.coefficients[0],
             b = constraint.coefficients[1],
             c = constraint.rhs;
-          return a * pt.x + b * pt.y <= c + 1e-6;
+          const lhs = a * pt.x + b * pt.y;
+          if (constraint.operator === "<=") return lhs <= c + 1e-6;
+          if (constraint.operator === ">=") return lhs >= c - 1e-6;
+          return Math.abs(lhs - c) <= 1e-6;
         });
       };
 
@@ -340,24 +364,9 @@ export function GraphVisualizer({ constraints, solution, problemType, objectiveC
 
     // Draw optimal solution point if available
     if (solution && solution.variables && solution.variables.length >= 2) {
-      // Prefer x1, x2 if present, else s1, s2, else first two variables
-      let x = 0, y = 0;
-      const x1 = solution.variables.find(v => v.name === 'x1');
-      const x2 = solution.variables.find(v => v.name === 'x2');
-      if (x1 && x2) {
-        x = x1.value;
-        y = x2.value;
-      } else {
-        const s1 = solution.variables.find(v => v.name === 's1');
-        const s2 = solution.variables.find(v => v.name === 's2');
-        if (s1 && s2) {
-          x = s1.value;
-          y = s2.value;
-        } else {
-          x = solution.variables[0].value;
-          y = solution.variables[1].value;
-        }
-      }
+      const point = getPointFromSolution(solution)
+      if (!point) return
+      const { x, y } = point
       ctx.beginPath()
       ctx.arc(transformX(x), transformY(y), 6, 0, 2 * Math.PI)
       ctx.fillStyle = "#ff0000"
@@ -366,7 +375,7 @@ export function GraphVisualizer({ constraints, solution, problemType, objectiveC
       ctx.fillStyle = "#000"
       ctx.fillText(`Optimal (${x.toFixed(2)}, ${y.toFixed(2)})`, transformX(x) + 10, transformY(y))
     }
-  }, [constraints, solution, problemType, objectiveCoefficients])
+  }, [constraints, solution, problemType, objectiveCoefficients, axisLabels, solutionVariableNames])
 
   return (
     <div className="w-full">

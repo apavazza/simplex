@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useMemo } from "react"
 import { SimplexSolver } from "@/src/lib/simplex-solver"
 import { DualSimplexSolver } from "@/src/lib/dual-simplex-solver"
 import { SimplexTable } from "@/src/components/simplex-table"
@@ -302,12 +302,18 @@ export default function SimplexCalculator() {
     }
   }, [autoSolve, solve, objectiveCoefficients, constraints, numVariables, problemType, selectedSimplexMethod]);
 
+  useEffect(() => {
+    if (selectedSimplexMethod !== "dual") return
+
+    setConstraints((prev) =>
+      prev.map((constraint) =>
+        constraint.operator === "=" ? { ...constraint, operator: "<=" } : constraint,
+      ),
+    )
+  }, [selectedSimplexMethod])
+
   const reset = () => {
     setObjectiveCoefficients(Array(numVariables).fill(""))
-    setConstraints([
-      { coefficients: Array(numVariables).fill(""), operator: "<=", rhs: "" },
-      { coefficients: Array(numVariables).fill(""), operator: "<=", rhs: "" },
-    ])
     setSelectedSimplexMethod("standard")
     setNumVariables(2)
     setProblemType("max")
@@ -321,6 +327,99 @@ export default function SimplexCalculator() {
     setError(null)
     window.history.replaceState(null, "", window.location.pathname)
   }
+
+  const graphData2D = useMemo(() => {
+    const parsedConstraints = solvedConstraints.map((constraint) => ({
+      coefficients: constraint.coefficients.map(Number),
+      operator: constraint.operator,
+      rhs: parseFloat(constraint.rhs),
+    }))
+    const parsedObjective = solvedObjectiveCoefficients.map(Number)
+
+    if (simplexMethod !== "dual") {
+      return {
+        constraints: parsedConstraints,
+        objectiveCoefficients: parsedObjective,
+        axisLabels: { x: "x₁", y: "x₂" },
+        solutionVariableNames: { x: "x1", y: "x2" },
+      }
+    }
+
+    // This matches the dual tableau built in DualSimplexSolver:
+    // A^T y >= c is converted to -A^T y <= -c for the current 2D visualizer.
+    if (parsedConstraints.length < 2 || solvedNumVariables < 2) {
+      return {
+        constraints: parsedConstraints,
+        objectiveCoefficients: parsedObjective,
+        axisLabels: { x: "y₁", y: "y₂" },
+        solutionVariableNames: { x: "y1", y: "y2" },
+      }
+    }
+
+    const dualConstraints = Array.from({ length: solvedNumVariables }, (_, variableIndex) => ({
+      coefficients: [
+        -(parsedConstraints[0]?.coefficients[variableIndex] ?? 0),
+        -(parsedConstraints[1]?.coefficients[variableIndex] ?? 0),
+      ],
+      operator: "<=" as const,
+      rhs: -(parsedObjective[variableIndex] ?? 0),
+    }))
+
+    const dualObjective = [parsedConstraints[0]?.rhs ?? 0, parsedConstraints[1]?.rhs ?? 0]
+
+    return {
+      constraints: dualConstraints,
+      objectiveCoefficients: dualObjective,
+      axisLabels: { x: "y₁", y: "y₂" },
+      solutionVariableNames: { x: "y1", y: "y2" },
+    }
+  }, [simplexMethod, solvedConstraints, solvedNumVariables, solvedObjectiveCoefficients])
+
+  const dualGraphData = useMemo(() => {
+    if (simplexMethod !== "dual" || steps.length === 0) {
+      return null
+    }
+
+    const initialTable = steps[0]?.table
+    if (!initialTable || initialTable.length === 0) {
+      return null
+    }
+
+    const numYVars = solvedConstraints.length
+    const numDualConstraints = solvedNumVariables
+    const rhsColumn = numYVars + numDualConstraints + 1
+
+    const constraintsFromTable = Array.from({ length: numDualConstraints }, (_, rowIdx) => {
+      const row = initialTable[rowIdx] || []
+      const coefficients = row.slice(0, numYVars)
+      const slackCoeff = row[numYVars + rowIdx] ?? 0
+      const operator: "<=" | ">=" | "=" =
+        slackCoeff > 1e-8 ? "<=" : slackCoeff < -1e-8 ? ">=" : "="
+      const rhs = row[rhsColumn] ?? 0
+
+      return {
+        coefficients,
+        operator,
+        rhs,
+      }
+    })
+
+    const objectiveCoefficients = Array.from({ length: numYVars }, (_, idx) => {
+      const objectiveRow = initialTable[numDualConstraints] || []
+      return -(objectiveRow[idx] ?? 0)
+    })
+
+    return {
+      numYVars,
+      constraints: constraintsFromTable,
+      objectiveCoefficients,
+      solutionVariableNames: { x: "y1", y: "y2", z: "y3" },
+      axisLabels2D: { x: "y₁", y: "y₂" },
+      axisLabels3D: { x: "y₁", y: "y₂", z: "y₃" },
+    }
+  }, [simplexMethod, solvedConstraints.length, solvedNumVariables, steps])
+
+  const graphDimension = simplexMethod === "dual" ? dualGraphData?.numYVars ?? 0 : solvedNumVariables
 
   return (
     <div className="container mx-auto py-10 px-4">
@@ -381,6 +480,7 @@ export default function SimplexCalculator() {
                         checked={selectedSimplexMethod === "dual"}
                         onChange={() => setSelectedSimplexMethod("dual")}
                         className="h-4 w-4 text-blue-600"
+                        disabled
                       />
                       <label htmlFor="dual" className="text-sm">
                         Dual Simplex
@@ -527,7 +627,7 @@ export default function SimplexCalculator() {
                       >
                         <option value="<=">≤</option>
                         <option value=">=">≥</option>
-                        <option value="=">=</option>
+                        {selectedSimplexMethod !== "dual" && <option value="=">=</option>}
                       </select>
 
                       <input
@@ -629,7 +729,7 @@ export default function SimplexCalculator() {
               >
                 Step by Step
               </button>
-              {solvedNumVariables === 2 && (
+              {graphDimension === 2 && (
                 <button
                   className={`flex-1 px-4 py-3 text-center ${
                     activeTab === "graph"
@@ -641,7 +741,7 @@ export default function SimplexCalculator() {
                   Graph
                 </button>
               )}
-              {solvedNumVariables === 3 && (
+              {graphDimension === 3 && (
                 <button
                   className={`flex-1 px-4 py-3 text-center ${
                     activeTab === "graph"
@@ -753,38 +853,47 @@ export default function SimplexCalculator() {
             )}
 
             {/* Graph Tab Content */}
-            {activeTab === "graph" && solvedNumVariables === 2 && (
+            {activeTab === "graph" && graphDimension === 2 && (
               <div className="p-4">
                 <GraphVisualizer
-                  constraints={solvedConstraints.map(constraint => ({
-                    coefficients: constraint.coefficients.map(Number),
-                    operator: constraint.operator,
-                    rhs: parseFloat(constraint.rhs)
-                  }))}
+                  constraints={simplexMethod === "dual" && dualGraphData ? dualGraphData.constraints : graphData2D.constraints}
                   solution={solution}
                   problemType={problemType}
-                  objectiveCoefficients={solvedObjectiveCoefficients.map(Number)}
+                  objectiveCoefficients={simplexMethod === "dual" && dualGraphData ? dualGraphData.objectiveCoefficients : graphData2D.objectiveCoefficients}
+                  axisLabels={simplexMethod === "dual" && dualGraphData ? dualGraphData.axisLabels2D : graphData2D.axisLabels}
+                  solutionVariableNames={
+                    simplexMethod === "dual" && dualGraphData
+                      ? { x: dualGraphData.solutionVariableNames.x, y: dualGraphData.solutionVariableNames.y }
+                      : graphData2D.solutionVariableNames
+                  }
                 />
               </div>
             )}
-            {activeTab === "graph" && solvedNumVariables === 3 && (
+            {activeTab === "graph" && graphDimension === 3 && (
               <div className="p-4">
                 {solution ? (
                   <GraphVisualizer3D
-                    constraints={solvedConstraints.map(constraint => ({
+                    constraints={simplexMethod === "dual" && dualGraphData ? dualGraphData.constraints : solvedConstraints.map(constraint => ({
                       coefficients: constraint.coefficients.map(Number),
                       operator: constraint.operator,
                       rhs: parseFloat(constraint.rhs)
                     }))}
                     solution={solution}
                     problemType={problemType}
-                    objectiveCoefficients={solvedObjectiveCoefficients.map(Number)}
+                    objectiveCoefficients={simplexMethod === "dual" && dualGraphData ? dualGraphData.objectiveCoefficients : solvedObjectiveCoefficients.map(Number)}
+                    axisLabels={simplexMethod === "dual" && dualGraphData ? dualGraphData.axisLabels3D : { x: "x₁", y: "x₂", z: "x₃" }}
+                    solutionVariableNames={simplexMethod === "dual" && dualGraphData ? dualGraphData.solutionVariableNames : { x: "x1", y: "x2", z: "x3" }}
                   />
                 ) : (
                   <div className="text-center py-8 text-gray-500">
                     Enter a problem and click &quot;Solve&quot; to see the 3D graphical solution
                   </div>
                 )}
+              </div>
+            )}
+            {activeTab === "graph" && graphDimension !== 2 && graphDimension !== 3 && (
+              <div className="p-6 text-center text-gray-500">
+                Graph view is available only for 2 or 3 variables in the plotted space.
               </div>
             )}
           </div>

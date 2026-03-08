@@ -93,6 +93,7 @@ export class SimplexSolver {
   private initializeMatrix(): void {
     const numVars = this.variables.length
     const numConstraints = this.constraints.length
+    const rhsColumn = numVars + numConstraints + 1
 
     // Initialize matrix with zeros
     // Rows: constraints + objective function
@@ -116,7 +117,7 @@ export class SimplexSolver {
       }
 
       // Set RHS
-      this.matrix[i][numVars + numConstraints + 1] = rightSide
+      this.matrix[i][rhsColumn] = rightSide
 
       // Set Z coefficient to 0
       this.matrix[i][numVars + numConstraints] = 0
@@ -149,6 +150,13 @@ export class SimplexSolver {
         this.matrix[i][numVars + i] = -1
       }
       // For equality constraints, no slack variable is added
+
+      // Keep the initial tableau RHS non-negative by flipping the entire row.
+      if (this.matrix[i][rhsColumn] < 0) {
+        for (let col = 0; col < this.matrix[i].length; col++) {
+          this.matrix[i][col] = -this.matrix[i][col]
+        }
+      }
     }
 
     // Fill objective function row (last row)
@@ -198,6 +206,9 @@ export class SimplexSolver {
       }
 
       const pivotCol = this.findPivotColumn()
+      if (this.isColumnUnbounded(pivotCol)) {
+        throw new Error("Could not be solved (unbounded)")
+      }
       const pivotRow = this.findPivotRow(pivotCol)
 
       const pivotInfo: PivotInfo = {
@@ -222,50 +233,66 @@ export class SimplexSolver {
     // Extract solution
     const solution = this.extractSolution()
 
-    // Constraint satisfaction check
-    // Evaluate each constraint with the solution variables
-    for (let i = 0; i < this.constraints.length; i++) {
-      const constraint = this.constraints[i];
-      const parts = constraint.split(/(<=|>=|=)/);
-      if (parts.length !== 3) continue; // skip malformed
-
-      const leftSide = parts[0].trim();
-      const op = parts[1];
-      const rightSide = Number.parseFloat(parts[2].trim());
-      if (isNaN(rightSide)) continue;
-
-      // Build a map of variable values
-      const values: { [key: string]: number } = {};
-      for (const v of solution.variables) {
-        values[v.name] = v.value;
-      }
-
-      // Evaluate left side
-      let lhs = 0;
-      const terms = leftSide.split(/(?=[-+])/).map(term => term.trim());
-      for (const term of terms) {
-        if (!term) continue;
-        const match = term.match(/^\s*([+-]?\s*\d*\.?\d*)\s*(x\d+)/);
-        if (!match) continue;
-        const coefStr = match[1].replace(/\s+/g, "");
-        const coef = coefStr === "" || coefStr === "+" ? 1 : (coefStr === "-" ? -1 : Number.parseFloat(coefStr));
-        const variable = match[2].trim();
-        lhs += coef * (values[variable] ?? 0);
-      }
-
-      // Check constraint
-      let satisfied = false;
-      const tol = 1e-6;
-      if (op === "<=") satisfied = lhs <= rightSide + tol;
-      else if (op === ">=") satisfied = lhs >= rightSide - tol;
-      else if (op === "=") satisfied = Math.abs(lhs - rightSide) < tol;
-
-      if (!satisfied) {
-        throw new Error("The origin is not feasible")
-      }
+    if (!this.validateFinalSolution(solution)) {
+      throw new Error("Could not be solved")
     }
 
     return { solution, steps: this.steps }
+  }
+
+  private isColumnUnbounded(pivotCol: number): boolean {
+    const tol = 1e-10
+    for (let i = 0; i < this.matrix.length - 1; i++) {
+      if (this.matrix[i][pivotCol] > tol) {
+        return false
+      }
+    }
+    return true
+  }
+
+  private validateFinalSolution(solution: Solution): boolean {
+    const tol = 1e-6
+    const values: { [key: string]: number } = {}
+    for (const v of solution.variables) {
+      values[v.name] = v.value
+    }
+
+    // Enforce primal non-negativity x_i >= 0
+    for (const variable of this.variables) {
+      const value = values[variable] ?? 0
+      if (!Number.isFinite(value) || value < -tol) {
+        return false
+      }
+    }
+
+    // Validate primal constraints using the extracted x values.
+    for (const constraint of this.constraints) {
+      const parts = constraint.split(/(<=|>=|=)/)
+      if (parts.length !== 3) return false
+
+      const leftSide = parts[0].trim()
+      const op = parts[1]
+      const rightSide = Number.parseFloat(parts[2].trim())
+      if (!Number.isFinite(rightSide)) return false
+
+      let lhs = 0
+      const terms = leftSide.split(/(?=[-+])/).map((term) => term.trim())
+      for (const term of terms) {
+        if (!term) continue
+        const match = term.match(/^\s*([+-]?\s*\d*\.?\d*)\s*(x\d+)/)
+        if (!match) continue
+        const coefStr = match[1].replace(/\s+/g, "")
+        const coef = coefStr === "" || coefStr === "+" ? 1 : (coefStr === "-" ? -1 : Number.parseFloat(coefStr))
+        const variable = match[2].trim()
+        lhs += coef * (values[variable] ?? 0)
+      }
+
+      if (op === "<=" && lhs > rightSide + tol) return false
+      if (op === ">=" && lhs < rightSide - tol) return false
+      if (op === "=" && Math.abs(lhs - rightSide) > tol) return false
+    }
+
+    return true
   }
 
   // Use the standard criteria for maximization (look for negative coefficients) without branching.

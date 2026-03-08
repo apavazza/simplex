@@ -24,6 +24,8 @@ interface GraphVisualizer3DProps {
   solution: SimplexSolution | null
   problemType: "max" | "min"
   objectiveCoefficients: number[]
+  axisLabels?: { x: string; y: string; z: string }
+  solutionVariableNames?: { x: string; y: string; z: string }
 }
 
 const CANVAS_HEIGHT = 560
@@ -165,7 +167,7 @@ function createTextLabel(
   return new CSS2DObject(element)
 }
 
-export function GraphVisualizer3D({ constraints, solution }: GraphVisualizer3DProps) {
+export function GraphVisualizer3D({ constraints, solution, axisLabels, solutionVariableNames }: GraphVisualizer3DProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const wrapperRef = useRef<HTMLDivElement | null>(null)
 
@@ -245,13 +247,13 @@ export function GraphVisualizer3D({ constraints, solution }: GraphVisualizer3DPr
       trackMesh(line)
     })
 
-    const axisLabels = [
-      { text: "x₁", color: "red", position: new THREE.Vector3(AXIS_LENGTH + AXIS_LABEL_OFFSET, 0, 0) },
-      { text: "x₂", color: "green", position: new THREE.Vector3(0, AXIS_LENGTH + AXIS_LABEL_OFFSET, 0) },
-      { text: "x₃", color: "blue", position: new THREE.Vector3(0, 0, AXIS_LENGTH + AXIS_LABEL_OFFSET) },
+    const axisLabelsConfig = [
+      { text: axisLabels?.x ?? "x₁", color: "red", position: new THREE.Vector3(AXIS_LENGTH + AXIS_LABEL_OFFSET, 0, 0) },
+      { text: axisLabels?.y ?? "x₂", color: "green", position: new THREE.Vector3(0, AXIS_LENGTH + AXIS_LABEL_OFFSET, 0) },
+      { text: axisLabels?.z ?? "x₃", color: "blue", position: new THREE.Vector3(0, 0, AXIS_LENGTH + AXIS_LABEL_OFFSET) },
       { text: "0", color: "#222", position: new THREE.Vector3(-0.7, -0.7, -0.7), fontSize: 13 },
     ]
-    axisLabels.forEach(({ text, color, position, fontSize }) => {
+    axisLabelsConfig.forEach(({ text, color, position, fontSize }) => {
       const label = createTextLabel(text, color, fontSize ?? 16)
       label.position.copy(position)
       labelObjects.push(label)
@@ -310,11 +312,14 @@ export function GraphVisualizer3D({ constraints, solution }: GraphVisualizer3DPr
 
     const optimalPosition: [number, number, number] = [0, 0, 0]
     if (solution?.variables?.length) {
-      const findValue = (names: string[]) =>
-        solution.variables.find((variable) => names.includes(variable.name))?.value ?? 0
-      optimalPosition[0] = findValue(["x1", "s1"])
-      optimalPosition[1] = findValue(["x2", "s2"])
-      optimalPosition[2] = findValue(["x3", "s3"])
+      const preferred = solutionVariableNames ?? { x: "x1", y: "x2", z: "x3" }
+      const findValue = (preferredName: string, fallbackNames: string[]) =>
+        solution.variables.find((variable) => variable.name === preferredName)?.value
+        ?? solution.variables.find((variable) => fallbackNames.includes(variable.name))?.value
+        ?? 0
+      optimalPosition[0] = findValue(preferred.x, ["x1", "s1", "y1"])
+      optimalPosition[1] = findValue(preferred.y, ["x2", "s2", "y2"])
+      optimalPosition[2] = findValue(preferred.z, ["x3", "s3", "y3"])
     }
 
     const optimalGeometry = new THREE.SphereGeometry(0.18, 24, 24)
@@ -368,7 +373,7 @@ export function GraphVisualizer3D({ constraints, solution }: GraphVisualizer3DPr
       disposableMaterials.forEach((material) => material.dispose())
       labelObjects.forEach((label) => label.element.remove())
     }
-  }, [constraints, solution])
+  }, [axisLabels, constraints, solution, solutionVariableNames])
 
   return (
     <div style={{ width: "100%" }}>
@@ -406,9 +411,9 @@ export function GraphVisualizer3D({ constraints, solution }: GraphVisualizer3DPr
         }}
       >
         <div>
-          <span style={{ color: "red" }}>x₁</span>, <span style={{ color: "green" }}>x₂</span>, and
+          <span style={{ color: "red" }}>{axisLabels?.x ?? "x₁"}</span>, <span style={{ color: "green" }}>{axisLabels?.y ?? "x₂"}</span>, and
           {" "}
-          <span style={{ color: "blue" }}>x₃</span> mark the axes
+          <span style={{ color: "blue" }}>{axisLabels?.z ?? "x₃"}</span> mark the axes
         </div>
         <div>
           <span style={{ color: "#1e90ff" }}>Blue spheres</span>: feasible vertices
